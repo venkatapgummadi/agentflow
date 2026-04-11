@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=68.0", "wheel"]
-build-backend = "setuptools.backends._legacy:_Backend"
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentflow"
@@ -28,18 +28,19 @@ classifiers = [
     "Topic :: System :: Distributed Computing",
 ]
 
-dependencies = [
-    "aiohttp>=3.9.0",
-    "pydantic>=2.0",
-]
+dependencies = []
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4",
-    "pytest-asyncio>=0.21",
+    "pytest-asyncio>=0.23",
     "pytest-cov>=4.1",
     "ruff>=0.1.0",
     "mypy>=1.5",
+]
+all = [
+    "aiohttp>=3.9.0",
+    "pydantic>=2.0",
 ]
 mulesoft = [
     "aiohttp>=3.9.0",
