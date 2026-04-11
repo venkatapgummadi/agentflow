@@ -1,9 +1,9 @@
 """
-AgentFlow — AI-Powered Multi-Agent API Orchestration Framework.
+AgentFlow — A Multi-Agent Framework for AI-Powered Enterprise API Orchestration.
 
-A production-grade framework that uses autonomous AI agents to dynamically
-orchestrate, compose, and manage API calls across enterprise integration
-platforms with first-class MuleSoft Anypoint support.
+A production-grade framework where autonomous AI agents dynamically orchestrate,
+compose, and self-heal API workflows across enterprise integration platforms,
+with first-class MuleSoft Anypoint support.
 
 Author: Venkata Pavan Kumar Gummadi
 License: Apache 2.0

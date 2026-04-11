@@ -1,10 +1,12 @@
-# AgentFlow — AI-Powered Multi-Agent API Orchestration Framework
+# AgentFlow
+
+### A Multi-Agent Framework for AI-Powered Enterprise API Orchestration
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 [![CI](https://img.shields.io/badge/CI-passing-brightgreen.svg)](.github/workflows/ci.yml)
 
-**AgentFlow** is a production-grade Python framework that uses autonomous AI agents to dynamically orchestrate, compose, and manage API calls across enterprise integration platforms — with first-class MuleSoft Anypoint support.
+**AgentFlow** is a production-grade Python framework where autonomous AI agents dynamically orchestrate, compose, and self-heal API workflows across enterprise integration platforms — with first-class MuleSoft Anypoint support.
 
 ## The Problem
 
