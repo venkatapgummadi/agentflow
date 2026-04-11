@@ -8,8 +8,6 @@ Author: Venkata Pavan Kumar Gummadi
 
 import time
 
-import pytest
-
 from agentflow.resilience.circuit_breaker import CircuitBreaker, CircuitState
 
 

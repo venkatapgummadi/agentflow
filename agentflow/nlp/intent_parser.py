@@ -17,14 +17,14 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 # ── Operation Patterns ──────────────────────────────────────────────────
 
-OPERATION_PATTERNS: Dict[str, List[str]] = {
+OPERATION_PATTERNS: dict[str, list[str]] = {
     "api_call": [
         r"\b(fetch|get|retrieve|lookup|read|find|search|query)\b",
         r"\b(create|post|add|insert|register|submit)\b",
@@ -69,9 +69,9 @@ class ParsedIntent:
     def __init__(
         self,
         raw_intent: str = "",
-        operations: Optional[List[Dict[str, Any]]] = None,
-        entities: Optional[Dict[str, List[str]]] = None,
-        conditions: Optional[List[Dict[str, Any]]] = None,
+        operations: list[dict[str, Any]] | None = None,
+        entities: dict[str, list[str]] | None = None,
+        conditions: list[dict[str, Any]] | None = None,
         confidence: float = 0.0,
     ):
         self.raw_intent = raw_intent
@@ -80,7 +80,7 @@ class ParsedIntent:
         self.conditions = conditions or []
         self.confidence = confidence
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "raw_intent": self.raw_intent,
             "operations": self.operations,
@@ -116,8 +116,8 @@ class IntentParser:
 
     def __init__(
         self,
-        custom_patterns: Optional[Dict[str, List[str]]] = None,
-        custom_entities: Optional[Dict[str, str]] = None,
+        custom_patterns: dict[str, list[str]] | None = None,
+        custom_entities: dict[str, str] | None = None,
     ):
         self.operation_patterns = {**OPERATION_PATTERNS}
         if custom_patterns:
@@ -131,7 +131,7 @@ class IntentParser:
         if custom_entities:
             self.entity_patterns.update(custom_entities)
 
-    def parse(self, intent: str) -> Dict[str, Any]:
+    def parse(self, intent: str) -> dict[str, Any]:
         """
         Parse a natural-language intent into a structured workflow.
 
@@ -145,7 +145,7 @@ class IntentParser:
         clauses = self._split_clauses(intent)
 
         # Step 2: Extract operations from each clause
-        operations: List[Dict[str, Any]] = []
+        operations: list[dict[str, Any]] = []
         for i, clause in enumerate(clauses):
             ops = self._extract_operations(clause, index=i)
             operations.extend(ops)
@@ -179,13 +179,13 @@ class IntentParser:
 
         return parsed.to_dict()
 
-    def _split_clauses(self, intent: str) -> List[str]:
+    def _split_clauses(self, intent: str) -> list[str]:
         """Split intent into logical clauses."""
         # Split on conjunctions and commas
         separators = r",\s*(?:and|then|after that|next|finally|also)\s*|,\s+"
         clauses = re.split(separators, intent, flags=re.IGNORECASE)
         # Also split on standalone conjunctions
-        result: List[str] = []
+        result: list[str] = []
         for clause in clauses:
             sub = re.split(r"\s+(?:and then|then|and)\s+", clause, flags=re.IGNORECASE)
             result.extend(s.strip() for s in sub if s.strip())
@@ -193,9 +193,9 @@ class IntentParser:
 
     def _extract_operations(
         self, clause: str, index: int = 0
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Extract operations from a single clause."""
-        operations: List[Dict[str, Any]] = []
+        operations: list[dict[str, Any]] = []
         clause_lower = clause.lower()
 
         for op_type, patterns in self.operation_patterns.items():
@@ -245,18 +245,18 @@ class IntentParser:
         match = re.match(r"([^,;]+)", remaining)
         return match.group(1).strip() if match else remaining.strip()
 
-    def _extract_entities(self, intent: str) -> Dict[str, List[str]]:
+    def _extract_entities(self, intent: str) -> dict[str, list[str]]:
         """Extract named entities from the full intent."""
-        entities: Dict[str, List[str]] = {}
+        entities: dict[str, list[str]] = {}
         for entity_type, pattern in self.entity_patterns.items():
             matches = re.findall(pattern, intent, re.IGNORECASE)
             if matches:
                 entities[entity_type] = matches
         return entities
 
-    def _extract_conditions(self, intent: str) -> List[Dict[str, Any]]:
+    def _extract_conditions(self, intent: str) -> list[dict[str, Any]]:
         """Extract conditional logic from the intent."""
-        conditions: List[Dict[str, Any]] = []
+        conditions: list[dict[str, Any]] = []
 
         # Pattern: "if X then Y"
         if_then = re.findall(
@@ -286,9 +286,9 @@ class IntentParser:
 
         return conditions
 
-    def _extract_inline_params(self, clause: str) -> Dict[str, Any]:
+    def _extract_inline_params(self, clause: str) -> dict[str, Any]:
         """Extract inline parameters from a clause."""
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
 
         # Extract numeric IDs
         ids = re.findall(r"\b(\d{3,})\b", clause)
@@ -302,9 +302,9 @@ class IntentParser:
 
         return params
 
-    def _infer_tags(self, clause: str) -> List[str]:
+    def _infer_tags(self, clause: str) -> list[str]:
         """Infer capability tags from clause content."""
-        tags: List[str] = []
+        tags: list[str] = []
         tag_keywords = {
             "customer": ["customer", "crm", "client", "account"],
             "order": ["order", "purchase", "transaction", "cart"],
@@ -322,8 +322,8 @@ class IntentParser:
         return tags
 
     def _infer_dependencies(
-        self, operations: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+        self, operations: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """
         Infer data dependencies between operations.
 
@@ -348,8 +348,8 @@ class IntentParser:
 
     def _calculate_confidence(
         self,
-        operations: List[Dict[str, Any]],
-        entities: Dict[str, List[str]],
+        operations: list[dict[str, Any]],
+        entities: dict[str, list[str]],
     ) -> float:
         """
         Calculate parsing confidence score (0.0 to 1.0).

@@ -12,10 +12,10 @@ Author: Venkata Pavan Kumar Gummadi
 
 from __future__ import annotations
 
-from enum import Enum
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ class CircuitBreaker:
         # Metrics for adaptive behavior
         self._total_requests = 0
         self._total_failures = 0
-        self._window_failures: List[float] = []
+        self._window_failures: list[float] = []
 
     @property
     def state(self) -> CircuitState:
@@ -169,7 +169,7 @@ class CircuitBreaker:
         self._success_count = 0
         logger.info("Circuit '%s' manually closed", self.name)
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get current circuit breaker metrics."""
         return {
             "name": self.name,

@@ -11,10 +11,10 @@ Author: Venkata Pavan Kumar Gummadi
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import logging
-from typing import Any, Dict, Optional
 import uuid
+from abc import ABC, abstractmethod
+from typing import Any
 
 from agentflow.core.context import EventType, OrchestrationContext
 
@@ -34,9 +34,9 @@ class BaseAgent(ABC):
 
     def __init__(
         self,
-        agent_id: Optional[str] = None,
+        agent_id: str | None = None,
         name: str = "BaseAgent",
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ):
         self.agent_id = agent_id or f"{name.lower()}-{uuid.uuid4().hex[:6]}"
         self.name = name
@@ -48,8 +48,8 @@ class BaseAgent(ABC):
         context: OrchestrationContext,
         event_type: EventType,
         message: str = "",
-        step_id: Optional[str] = None,
-        payload: Optional[Dict[str, Any]] = None,
+        step_id: str | None = None,
+        payload: dict[str, Any] | None = None,
     ) -> None:
         """Record an event in the orchestration journal."""
         context.record_event(

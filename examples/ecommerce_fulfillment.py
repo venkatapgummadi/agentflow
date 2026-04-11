@@ -400,11 +400,34 @@ async def main():
     order = Order(
         customer_id="CUST-42",
         items=[
-            OrderItem(sku="SKU-LAPTOP-001", name="Pro Laptop 16\"", quantity=1, price=1299.99, warehouse_id="WH-EAST"),
-            OrderItem(sku="SKU-MONITOR-003", name="4K Monitor 27\"", quantity=2, price=449.99, warehouse_id="WH-WEST"),
-            OrderItem(sku="SKU-HEADSET-005", name="Wireless Headset", quantity=1, price=89.99, warehouse_id="WH-CENTRAL"),
+            OrderItem(
+                sku="SKU-LAPTOP-001",
+                name="Pro Laptop 16\"",
+                quantity=1,
+                price=1299.99,
+                warehouse_id="WH-EAST",
+            ),
+            OrderItem(
+                sku="SKU-MONITOR-003",
+                name="4K Monitor 27\"",
+                quantity=2,
+                price=449.99,
+                warehouse_id="WH-WEST",
+            ),
+            OrderItem(
+                sku="SKU-HEADSET-005",
+                name="Wireless Headset",
+                quantity=1,
+                price=89.99,
+                warehouse_id="WH-CENTRAL",
+            ),
         ],
-        shipping_address={"street": "123 Tech Blvd", "city": "Austin", "state": "TX", "zip": "78701"},
+        shipping_address={
+            "street": "123 Tech Blvd",
+            "city": "Austin",
+            "state": "TX",
+            "zip": "78701",
+        },
     )
 
     print(f"\nOrder: {order.order_id}")

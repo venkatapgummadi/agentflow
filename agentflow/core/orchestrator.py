@@ -14,7 +14,7 @@ Author: Venkata Pavan Kumar Gummadi
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from agentflow.agents.executor import ExecutorAgent
 from agentflow.agents.planner import PlannerAgent
@@ -35,8 +35,8 @@ class OrchestrationResult:
         self,
         context: OrchestrationContext,
         plan: ExecutionPlan,
-        outputs: Dict[str, Any],
-        validation: Optional[Dict[str, Any]] = None,
+        outputs: dict[str, Any],
+        validation: dict[str, Any] | None = None,
     ):
         self.context = context
         self.plan = plan
@@ -48,7 +48,7 @@ class OrchestrationResult:
     def duration(self) -> float:
         return self.context.duration
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "success": self.success,
             "duration_seconds": round(self.duration, 3),
@@ -77,16 +77,16 @@ class AgentOrchestrator:
 
     def __init__(
         self,
-        connectors: Optional[List[BaseConnector]] = None,
-        router: Optional[DynamicRouter] = None,
-        planner: Optional[PlannerAgent] = None,
-        executor: Optional[ExecutorAgent] = None,
-        validator: Optional[ValidatorAgent] = None,
-        intent_parser: Optional[IntentParser] = None,
+        connectors: list[BaseConnector] | None = None,
+        router: DynamicRouter | None = None,
+        planner: PlannerAgent | None = None,
+        executor: ExecutorAgent | None = None,
+        validator: ValidatorAgent | None = None,
+        intent_parser: IntentParser | None = None,
         max_parallel_steps: int = 10,
         default_timeout_ms: int = 30000,
     ):
-        self.connectors: Dict[str, BaseConnector] = {}
+        self.connectors: dict[str, BaseConnector] = {}
         for conn in (connectors or []):
             self.connectors[conn.connector_id] = conn
 
@@ -108,9 +108,9 @@ class AgentOrchestrator:
         self.connectors[connector.connector_id] = connector
         logger.info("Registered connector: %s", connector.connector_id)
 
-    def discover_apis(self) -> List[Dict[str, Any]]:
+    def discover_apis(self) -> list[dict[str, Any]]:
         """Discover all available APIs across registered connectors."""
-        apis: List[Dict[str, Any]] = []
+        apis: list[dict[str, Any]] = []
         for connector in self.connectors.values():
             try:
                 discovered = connector.discover()
@@ -126,7 +126,7 @@ class AgentOrchestrator:
     async def execute(
         self,
         intent: str,
-        parameters: Optional[Dict[str, Any]] = None,
+        parameters: dict[str, Any] | None = None,
         validate: bool = True,
     ) -> OrchestrationResult:
         """

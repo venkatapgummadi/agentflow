@@ -14,7 +14,7 @@ Author: Venkata Pavan Kumar Gummadi
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from agentflow.agents.base_agent import BaseAgent
 from agentflow.core.context import EventType, OrchestrationContext
@@ -41,7 +41,7 @@ class PlannerAgent(BaseAgent):
 
     def __init__(self, **kwargs: Any):
         super().__init__(name="PlannerAgent", **kwargs)
-        self._capability_index: Dict[str, List[Dict[str, Any]]] = {}
+        self._capability_index: dict[str, list[dict[str, Any]]] = {}
 
     async def execute(self, context: OrchestrationContext, **kwargs: Any) -> ExecutionPlan:
         """Execute planning phase."""
@@ -53,9 +53,9 @@ class PlannerAgent(BaseAgent):
     async def create_plan(
         self,
         intent: str,
-        parsed_intent: Optional[Dict[str, Any]] = None,
-        available_apis: Optional[List[Dict[str, Any]]] = None,
-        parameters: Optional[Dict[str, Any]] = None,
+        parsed_intent: dict[str, Any] | None = None,
+        available_apis: list[dict[str, Any]] | None = None,
+        parameters: dict[str, Any] | None = None,
     ) -> ExecutionPlan:
         """
         Create an execution plan for the given intent.
@@ -82,7 +82,7 @@ class PlannerAgent(BaseAgent):
             operations = self._decompose_intent(intent)
 
         # Build steps with dependency analysis
-        step_map: Dict[str, PlanStep] = {}
+        step_map: dict[str, PlanStep] = {}
         for i, op in enumerate(operations):
             # Find matching APIs
             matched_api = self._match_capability(
@@ -121,7 +121,7 @@ class PlannerAgent(BaseAgent):
 
         return plan
 
-    def _build_capability_index(self, apis: List[Dict[str, Any]]) -> None:
+    def _build_capability_index(self, apis: list[dict[str, Any]]) -> None:
         """Index APIs by their tags and capabilities for fast lookup."""
         self._capability_index.clear()
         for api in apis:
@@ -133,9 +133,9 @@ class PlannerAgent(BaseAgent):
 
     def _match_capability(
         self,
-        operation: Dict[str, Any],
-        apis: List[Dict[str, Any]],
-    ) -> Optional[Dict[str, Any]]:
+        operation: dict[str, Any],
+        apis: list[dict[str, Any]],
+    ) -> dict[str, Any] | None:
         """
         Find the best matching API for an operation.
 
@@ -180,9 +180,9 @@ class PlannerAgent(BaseAgent):
 
     def _analyze_dependencies(
         self,
-        operation: Dict[str, Any],
-        previous_steps: Dict[str, PlanStep],
-    ) -> List[str]:
+        operation: dict[str, Any],
+        previous_steps: dict[str, PlanStep],
+    ) -> list[str]:
         """
         Determine which previous steps this operation depends on.
 
@@ -197,7 +197,7 @@ class PlannerAgent(BaseAgent):
 
         return deps
 
-    def _decompose_intent(self, intent: str) -> List[Dict[str, Any]]:
+    def _decompose_intent(self, intent: str) -> list[dict[str, Any]]:
         """
         Decompose a natural-language intent into atomic operations.
 
@@ -205,7 +205,7 @@ class PlannerAgent(BaseAgent):
         the IntentParser for richer decomposition.
         """
         # Simple keyword-based decomposition
-        operations: List[Dict[str, Any]] = []
+        operations: list[dict[str, Any]] = []
         keywords_to_ops = {
             "fetch": "api_call",
             "get": "api_call",
@@ -248,7 +248,7 @@ class PlannerAgent(BaseAgent):
             return 0
 
         step_ids = {s.step_id for s in plan.steps}
-        memo: Dict[str, int] = {}
+        memo: dict[str, int] = {}
 
         def depth(step: PlanStep) -> int:
             if step.step_id in memo:

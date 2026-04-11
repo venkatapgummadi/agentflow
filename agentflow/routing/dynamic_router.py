@@ -16,11 +16,11 @@ Author: Venkata Pavan Kumar Gummadi
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import logging
 import math
 import time
-from typing import Any, Callable, Dict, List, Optional
+from dataclasses import dataclass, field
+from typing import Any, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class EndpointScore:
     total_score: float = 0.0
     selected: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "endpoint_id": self.endpoint_id,
             "connector_id": self.connector_id,
@@ -154,22 +154,22 @@ class DynamicRouter:
 
     def __init__(
         self,
-        weights: Optional[RoutingWeights] = None,
-        custom_scorers: Optional[Dict[str, Callable]] = None,
+        weights: RoutingWeights | None = None,
+        custom_scorers: dict[str, Callable] | None = None,
     ):
         self.weights = weights or RoutingWeights()
         self.custom_scorers = custom_scorers or {}
-        self._metrics: Dict[str, EndpointMetrics] = {}
+        self._metrics: dict[str, EndpointMetrics] = {}
 
         if not self.weights.validate():
             logger.warning("Routing weights do not sum to 1.0 — normalizing")
 
     def route(
         self,
-        candidates: List[Dict[str, Any]],
+        candidates: list[dict[str, Any]],
         required_capability: str = "",
-        context: Optional[Dict[str, Any]] = None,
-    ) -> Optional[Dict[str, Any]]:
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | None:
         """
         Select the optimal endpoint from candidates.
 
@@ -200,12 +200,12 @@ class DynamicRouter:
 
     def score_all(
         self,
-        candidates: List[Dict[str, Any]],
+        candidates: list[dict[str, Any]],
         required_capability: str = "",
-        context: Optional[Dict[str, Any]] = None,
-    ) -> List[EndpointScore]:
+        context: dict[str, Any] | None = None,
+    ) -> list[EndpointScore]:
         """Score all candidate endpoints."""
-        scores: List[EndpointScore] = []
+        scores: list[EndpointScore] = []
         for candidate in candidates:
             score = self._score_endpoint(candidate, required_capability, context)
             scores.append(score)
@@ -229,9 +229,9 @@ class DynamicRouter:
 
     def _score_endpoint(
         self,
-        candidate: Dict[str, Any],
+        candidate: dict[str, Any],
         required_capability: str,
-        context: Optional[Dict[str, Any]],
+        context: dict[str, Any] | None,
     ) -> EndpointScore:
         """Calculate multi-dimensional score for a single endpoint."""
         ep_id = candidate.get("endpoint_id", "")

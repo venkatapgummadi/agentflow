@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from agentflow.agents.base_agent import BaseAgent
 from agentflow.connectors.base import APIResponse, BaseConnector
@@ -41,10 +41,10 @@ class ExecutorAgent(BaseAgent):
 
     def __init__(self, **kwargs: Any):
         super().__init__(name="ExecutorAgent", **kwargs)
-        self._circuit_breakers: Dict[str, CircuitBreaker] = {}
+        self._circuit_breakers: dict[str, CircuitBreaker] = {}
         self._retry_policy = RetryPolicy()
 
-    async def execute(self, context: OrchestrationContext, **kwargs: Any) -> Dict[str, Any]:
+    async def execute(self, context: OrchestrationContext, **kwargs: Any) -> dict[str, Any]:
         """Execute the plan from context."""
         plan = kwargs.get("plan")
         connectors = kwargs.get("connectors", {})
@@ -55,17 +55,17 @@ class ExecutorAgent(BaseAgent):
         self,
         plan: ExecutionPlan,
         context: OrchestrationContext,
-        connectors: Dict[str, BaseConnector],
-        router: Optional[DynamicRouter] = None,
+        connectors: dict[str, BaseConnector],
+        router: DynamicRouter | None = None,
         max_parallel: int = 10,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Execute all steps in the plan with maximum parallelism.
 
         Uses a work-stealing scheduler: continuously finds ready steps
         and executes them concurrently, bounded by max_parallel.
         """
-        outputs: Dict[str, Any] = {}
+        outputs: dict[str, Any] = {}
         semaphore = asyncio.Semaphore(max_parallel)
         iteration = 0
 
@@ -125,8 +125,8 @@ class ExecutorAgent(BaseAgent):
         self,
         step: PlanStep,
         context: OrchestrationContext,
-        connectors: Dict[str, BaseConnector],
-        router: Optional[DynamicRouter],
+        connectors: dict[str, BaseConnector],
+        router: DynamicRouter | None,
         semaphore: asyncio.Semaphore,
     ) -> Any:
         """Execute a single step within the concurrency semaphore."""
@@ -137,8 +137,8 @@ class ExecutorAgent(BaseAgent):
         self,
         step: PlanStep,
         context: OrchestrationContext,
-        connectors: Dict[str, BaseConnector],
-        router: Optional[DynamicRouter],
+        connectors: dict[str, BaseConnector],
+        router: DynamicRouter | None,
     ) -> Any:
         """
         Execute a single plan step with full resilience.
@@ -233,7 +233,7 @@ class ExecutorAgent(BaseAgent):
             "backoff_max": 30.0,
         }
 
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
         max_retries = retry_config.get("max_retries", 3)
 
         for attempt in range(max_retries + 1):
@@ -295,9 +295,9 @@ class ExecutorAgent(BaseAgent):
     def _route_to_connector(
         self,
         step: PlanStep,
-        connectors: List[BaseConnector],
+        connectors: list[BaseConnector],
         router: DynamicRouter,
-    ) -> Optional[BaseConnector]:
+    ) -> BaseConnector | None:
         """Use the DynamicRouter to find the best connector."""
         # Simplified routing — full implementation in DynamicRouter
         if connectors:

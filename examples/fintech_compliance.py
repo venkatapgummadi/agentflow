@@ -321,8 +321,13 @@ async def main():
     }
 
     print(f"\nTransaction: {transaction['sender_name']} -> {transaction['receiver_name']}")
-    print(f"Amount: ${transaction['amount']:,.2f} {transaction['currency']} -> {transaction['target_currency']}")
-    print(f"Route: {transaction['sender_country']} -> {transaction['receiver_country']}")
+    amount = transaction['amount']
+    currency = transaction['currency']
+    target_currency = transaction['target_currency']
+    print(f"Amount: ${amount:,.2f} {currency} -> {target_currency}")
+    sender_country = transaction['sender_country']
+    receiver_country = transaction['receiver_country']
+    print(f"Route: {sender_country} -> {receiver_country}")
     print("-" * 70)
 
     # Initialize connectors
@@ -336,21 +341,50 @@ async def main():
     # Phase 1: KYC verification (parallel for sender and receiver)
     print("\n[Phase 1] KYC Verification (parallel)...")
     kyc_sender, kyc_receiver = await asyncio.gather(
-        kyc.invoke("verify", parameters={"customer_id": transaction["sender_id"], "name": transaction["sender_name"]}),
-        kyc.invoke("verify", parameters={"customer_id": transaction["receiver_id"], "name": transaction["receiver_name"]}),
+        kyc.invoke(
+            "verify",
+            parameters={
+                "customer_id": transaction["sender_id"],
+                "name": transaction["sender_name"],
+            },
+        ),
+        kyc.invoke(
+            "verify",
+            parameters={
+                "customer_id": transaction["receiver_id"],
+                "name": transaction["receiver_name"],
+            },
+        ),
     )
-    print(f"  Sender KYC: {kyc_sender.body['kyc_status']} (risk: {kyc_sender.body['risk_rating']})")
-    print(f"  Receiver KYC: {kyc_receiver.body['kyc_status']} (risk: {kyc_receiver.body['risk_rating']})")
+    sender_status = kyc_sender.body['kyc_status']
+    sender_risk = kyc_sender.body['risk_rating']
+    print(f"  Sender KYC: {sender_status} (risk: {sender_risk})")
+    receiver_status = kyc_receiver.body['kyc_status']
+    receiver_risk = kyc_receiver.body['risk_rating']
+    print(f"  Receiver KYC: {receiver_status} (risk: {receiver_risk})")
 
     # Phase 2: Sanctions screening (parallel)
     print("\n[Phase 2] Sanctions Screening (parallel)...")
     sanc_sender, sanc_receiver = await asyncio.gather(
-        sanctions.invoke("screen", parameters={"name": transaction["sender_name"], "country": transaction["sender_country"]}),
-        sanctions.invoke("screen", parameters={"name": transaction["receiver_name"], "country": transaction["receiver_country"]}),
+        sanctions.invoke(
+            "screen",
+            parameters={
+                "name": transaction["sender_name"],
+                "country": transaction["sender_country"],
+            },
+        ),
+        sanctions.invoke(
+            "screen",
+            parameters={
+                "name": transaction["receiver_name"],
+                "country": transaction["receiver_country"],
+            },
+        ),
     )
     print(f"  Sender: {'CLEAR' if not sanc_sender.body['match_found'] else 'MATCH FOUND'}")
     print(f"  Receiver: {'CLEAR' if not sanc_receiver.body['match_found'] else 'MATCH FOUND'}")
-    print(f"  Lists checked: {', '.join(sanc_sender.body['lists_checked'])}")
+    lists_checked = ', '.join(sanc_sender.body['lists_checked'])
+    print(f"  Lists checked: {lists_checked}")
 
     # Phase 3: Compliance evaluation
     print("\n[Phase 3] Regulatory Compliance Evaluation...")
@@ -363,8 +397,10 @@ async def main():
         sanctions_result=sanc_sender.body,
         fraud_score=0.12,
     )
-    print(f"  Decision: {'APPROVED' if compliance['approved'] else 'BLOCKED'}")
-    print(f"  Risk level: {compliance['risk_level'].upper()}")
+    decision = "APPROVED" if compliance['approved'] else "BLOCKED"
+    print(f"  Decision: {decision}")
+    risk_level = compliance['risk_level'].upper()
+    print(f"  Risk level: {risk_level}")
     for finding in compliance["findings"]:
         print(f"    - {finding}")
     for action in compliance["actions_required"]:
@@ -382,9 +418,14 @@ async def main():
         "amount": transaction["amount"],
     })
     fx_body = fx_result.body
-    print(f"  Rate: 1 {fx_body['from']['currency']} = {fx_body['rate']} {fx_body['to']['currency']}")
-    print(f"  Converted: {fx_body['to']['currency']} {fx_body['to']['amount']:,.2f}")
-    print(f"  Quote valid for: {fx_body['valid_for_seconds']}s")
+    from_curr = fx_body['from']['currency']
+    to_curr = fx_body['to']['currency']
+    rate = fx_body['rate']
+    print(f"  Rate: 1 {from_curr} = {rate} {to_curr}")
+    amount_converted = fx_body['to']['amount']
+    print(f"  Converted: {to_curr} {amount_converted:,.2f}")
+    valid_seconds = fx_body['valid_for_seconds']
+    print(f"  Quote valid for: {valid_seconds}s")
 
     # Phase 5: Execute SWIFT transfer
     print("\n[Phase 5] Executing SWIFT Transfer...")
@@ -401,17 +442,26 @@ async def main():
     print(f"  SWIFT Ref: {t['swift_reference']}")
     print(f"  Status: {t['status'].upper()}")
     print(f"  Settlement: {t['estimated_settlement']}")
-    print(f"  Fees: ${t['total_fees']:.2f} (sending: ${t['fees']['sending_bank']}, "
-          f"correspondent: ${t['fees']['correspondent']}, receiving: ${t['fees']['receiving_bank']})")
+    sending_fee = t['fees']['sending_bank']
+    correspondent_fee = t['fees']['correspondent']
+    receiving_fee = t['fees']['receiving_bank']
+    total_fees = t['total_fees']
+    print(f"  Fees: ${total_fees:.2f} (sending: ${sending_fee}, "
+          f"correspondent: ${correspondent_fee}, receiving: ${receiving_fee})")
 
     # Summary
     print(f"\n{'=' * 70}")
     print(f"  TRANSACTION SUMMARY")
     print(f"{'=' * 70}")
-    print(f"  Sent: ${transaction['amount']:,.2f} USD")
-    print(f"  Received: {fx_body['to']['currency']} {fx_body['to']['amount']:,.2f}")
+    sent_amount = transaction['amount']
+    print(f"  Sent: ${sent_amount:,.2f} USD")
+    received_currency = fx_body['to']['currency']
+    received_amount = fx_body['to']['amount']
+    print(f"  Received: {received_currency} {received_amount:,.2f}")
     print(f"  Total fees: ${t['total_fees']:.2f}")
-    print(f"  Compliance: {compliance['risk_level'].upper()} risk | {compliance['compliance_id']}")
+    risk_level = compliance['risk_level'].upper()
+    compliance_id = compliance['compliance_id']
+    print(f"  Compliance: {risk_level} risk | {compliance_id}")
     print(f"  Audit events: {len(context.journal)}")
     print(f"  Duration: {context.duration:.3f}s")
     print(f"{'=' * 70}")

@@ -6,7 +6,6 @@ Verifies multi-dimensional scoring, routing strategies, and metrics tracking.
 Author: Venkata Pavan Kumar Gummadi
 """
 
-import pytest
 from agentflow.routing.dynamic_router import (
     DynamicRouter,
     RoutingWeights,

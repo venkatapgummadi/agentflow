@@ -14,11 +14,11 @@ Author: Venkata Pavan Kumar Gummadi
 from __future__ import annotations
 
 import asyncio
+import time
+import uuid
 from dataclasses import dataclass, field
 from enum import Enum
-import time
-from typing import Any, Dict, List, Optional
-import uuid
+from typing import Any
 
 
 class EventType(Enum):
@@ -46,11 +46,11 @@ class ContextEvent:
     event_type: EventType = EventType.AGENT_MESSAGE
     timestamp: float = field(default_factory=time.time)
     agent_id: str = ""
-    step_id: Optional[str] = None
-    payload: Dict[str, Any] = field(default_factory=dict)
+    step_id: str | None = None
+    payload: dict[str, Any] = field(default_factory=dict)
     message: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_id": self.event_id,
             "event_type": self.event_type.value,
@@ -79,8 +79,8 @@ class OrchestrationContext:
     def __init__(
         self,
         intent: str = "",
-        orchestration_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        orchestration_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         self.orchestration_id = orchestration_id or str(uuid.uuid4())
         self.intent = intent
@@ -88,17 +88,17 @@ class OrchestrationContext:
         self.created_at = time.time()
 
         # Namespaced agent state
-        self._state: Dict[str, Dict[str, Any]] = {}
+        self._state: dict[str, dict[str, Any]] = {}
         self._lock = asyncio.Lock()
 
         # Immutable event journal
-        self._journal: List[ContextEvent] = []
+        self._journal: list[ContextEvent] = []
 
         # Step results indexed by step_id
-        self._step_results: Dict[str, Any] = {}
+        self._step_results: dict[str, Any] = {}
 
         # Dependency graph: step_id -> list of dependent step_ids
-        self._dependencies: Dict[str, List[str]] = {}
+        self._dependencies: dict[str, list[str]] = {}
 
     async def set(self, namespace: str, key: str, value: Any) -> None:
         """Set a value in a namespaced scope (thread-safe)."""
@@ -114,7 +114,7 @@ class OrchestrationContext:
         async with self._lock:
             return self._state.get(namespace, {}).get(key, default)
 
-    async def get_namespace(self, namespace: str) -> Dict[str, Any]:
+    async def get_namespace(self, namespace: str) -> dict[str, Any]:
         """Get the full state for a namespace."""
         async with self._lock:
             return dict(self._state.get(namespace, {}))
@@ -123,8 +123,8 @@ class OrchestrationContext:
         self,
         event_type: EventType,
         agent_id: str = "",
-        step_id: Optional[str] = None,
-        payload: Optional[Dict[str, Any]] = None,
+        step_id: str | None = None,
+        payload: dict[str, Any] | None = None,
         message: str = "",
     ) -> ContextEvent:
         """Append an immutable event to the journal."""
@@ -152,7 +152,7 @@ class OrchestrationContext:
             self._dependencies[step_id] = []
         self._dependencies[step_id].append(depends_on)
 
-    def get_dependencies(self, step_id: str) -> List[str]:
+    def get_dependencies(self, step_id: str) -> list[str]:
         """Get all dependencies for a step."""
         return self._dependencies.get(step_id, [])
 
@@ -162,7 +162,7 @@ class OrchestrationContext:
         return all(d in self._step_results for d in deps)
 
     @property
-    def journal(self) -> List[ContextEvent]:
+    def journal(self) -> list[ContextEvent]:
         """Read-only access to the event journal."""
         return list(self._journal)
 
@@ -171,9 +171,9 @@ class OrchestrationContext:
         """Elapsed time since context creation."""
         return time.time() - self.created_at
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """Generate an orchestration summary for reporting."""
-        event_counts: Dict[str, int] = {}
+        event_counts: dict[str, int] = {}
         for event in self._journal:
             key = event.event_type.value
             event_counts[key] = event_counts.get(key, 0) + 1

@@ -13,7 +13,7 @@ Author: Venkata Pavan Kumar Gummadi
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from agentflow.agents.base_agent import BaseAgent
 from agentflow.core.context import EventType, OrchestrationContext
@@ -33,7 +33,7 @@ class ValidationRule:
         assertion: str = "",
         expected: Any = None,
         severity: str = "error",
-    ):
+    ):  # noqa: D102
         self.name = name
         self.rule_type = rule_type
         self.target_step = target_step
@@ -51,7 +51,7 @@ class ValidationResult:
         passed: bool,
         message: str = "",
         severity: str = "error",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ):
         self.rule_name = rule_name
         self.passed = passed
@@ -59,7 +59,7 @@ class ValidationResult:
         self.severity = severity
         self.details = details or {}
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "rule_name": self.rule_name,
             "passed": self.passed,
@@ -80,7 +80,7 @@ class ValidatorAgent(BaseAgent):
 
     def __init__(self, **kwargs: Any):
         super().__init__(name="ValidatorAgent", **kwargs)
-        self._rules: List[ValidationRule] = []
+        self._rules: list[ValidationRule] = []
 
     def add_rule(self, rule: ValidationRule) -> None:
         """Register a validation rule."""
@@ -95,8 +95,8 @@ class ValidatorAgent(BaseAgent):
         self,
         plan: ExecutionPlan,
         context: OrchestrationContext,
-        outputs: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        outputs: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Run all validation checks on the orchestration results.
 
@@ -106,7 +106,7 @@ class ValidatorAgent(BaseAgent):
         3. Data presence: critical outputs are non-null
         4. Custom rules: user-defined assertions
         """
-        results: List[ValidationResult] = []
+        results: list[ValidationResult] = []
 
         # Built-in: Completeness check
         results.append(self._check_completeness(plan))
@@ -185,8 +185,8 @@ class ValidatorAgent(BaseAgent):
         )
 
     def _check_data_presence(
-        self, plan: ExecutionPlan, outputs: Dict[str, Any]
-    ) -> List[ValidationResult]:
+        self, plan: ExecutionPlan, outputs: dict[str, Any]
+    ) -> list[ValidationResult]:
         """Verify completed steps have non-null outputs."""
         results: List[ValidationResult] = []
         for step in plan.steps:
@@ -210,7 +210,7 @@ class ValidatorAgent(BaseAgent):
         self,
         rule: ValidationRule,
         plan: ExecutionPlan,
-        outputs: Dict[str, Any],
+        outputs: dict[str, Any],
     ) -> ValidationResult:
         """Evaluate a custom validation rule."""
         try:

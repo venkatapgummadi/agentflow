@@ -14,10 +14,10 @@ Author: Venkata Pavan Kumar Gummadi
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, field
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass, field
+from typing import Any
 from urllib.parse import urljoin
 
 from agentflow.connectors.base import APIEndpoint, APIResponse, BaseConnector
@@ -38,7 +38,7 @@ class MuleSoftConfig:
     exchange_url: str = ""
     runtime_manager_url: str = ""
     autodiscover: bool = True
-    cache_ttl_seconds: int = 300
+    cache_ttl_seconds: int = 300  # noqa: F841
 
     def __post_init__(self):
         if not self.exchange_url:
@@ -62,10 +62,10 @@ class ExchangeAsset:
     description: str = ""
     api_type: str = ""  # rest-api, http-api, raml-fragment
     spec_url: str = ""
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     status: str = ""
     rating: float = 0.0
-    endpoints: List[Dict[str, Any]] = field(default_factory=list)
+    endpoints: list[dict[str, Any]] = field(default_factory=list)
 
 
 class MuleSoftConnector(BaseConnector):
@@ -116,16 +116,16 @@ class MuleSoftConnector(BaseConnector):
         )
 
         # Discovery cache
-        self._exchange_cache: List[ExchangeAsset] = []
+        self._exchange_cache: list[ExchangeAsset] = []
         self._cache_timestamp: float = 0
 
         # Rate-limit tracking per endpoint
-        self._rate_limits: Dict[str, Dict[str, Any]] = {}
+        self._rate_limits: dict[str, dict[str, Any]] = {}
 
         # Deployment status cache
-        self._deployment_status: Dict[str, str] = {}
+        self._deployment_status: dict[str, str] = {}
 
-    def discover(self) -> List[Dict[str, Any]]:
+    def discover(self) -> list[dict[str, Any]]:
         """
         Discover APIs from Anypoint Exchange.
 
@@ -144,7 +144,7 @@ class MuleSoftConnector(BaseConnector):
         )
 
         assets = self._fetch_exchange_assets()
-        apis: List[Dict[str, Any]] = []
+        apis: list[dict[str, Any]] = []
 
         for asset in assets:
             endpoints = self._parse_asset_spec(asset)
@@ -159,8 +159,8 @@ class MuleSoftConnector(BaseConnector):
     async def invoke(
         self,
         operation: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        parameters: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         timeout_ms: int = 30000,
     ) -> APIResponse:
         """
@@ -271,10 +271,10 @@ class MuleSoftConnector(BaseConnector):
         elapsed = time.time() - self._cache_timestamp
         return elapsed < self.mule_config.cache_ttl_seconds
 
-    def _cached_apis(self) -> List[Dict[str, Any]]:
+    def _cached_apis(self) -> list[dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
-    def _fetch_exchange_assets(self) -> List[ExchangeAsset]:
+    def _fetch_exchange_assets(self) -> list[ExchangeAsset]:
         """
         Fetch API assets from Anypoint Exchange.
 
@@ -285,9 +285,9 @@ class MuleSoftConnector(BaseConnector):
         logger.debug("Fetching Exchange assets for org %s", self.mule_config.org_id)
         return self._exchange_cache
 
-    def _parse_asset_spec(self, asset: ExchangeAsset) -> List[APIEndpoint]:
+    def _parse_asset_spec(self, asset: ExchangeAsset) -> list[APIEndpoint]:
         """Parse RAML or OAS spec to extract endpoints."""
-        endpoints: List[APIEndpoint] = []
+        endpoints: list[APIEndpoint] = []
         for ep_data in asset.endpoints:
             ep = APIEndpoint(
                 name=f"{asset.name} - {ep_data.get('name', '')}",
@@ -300,7 +300,7 @@ class MuleSoftConnector(BaseConnector):
             endpoints.append(ep)
         return endpoints
 
-    def _parse_operation(self, operation: str) -> Tuple[str, str]:
+    def _parse_operation(self, operation: str) -> tuple[str, str]:
         """Parse 'GET /path' into (method, path)."""
         parts = operation.strip().split(" ", 1)
         if len(parts) == 2:
@@ -313,8 +313,8 @@ class MuleSoftConnector(BaseConnector):
         return f"{base}/{self.mule_config.environment}{path}"
 
     def _build_headers(
-        self, extra_headers: Optional[Dict[str, str]] = None
-    ) -> Dict[str, str]:
+        self, extra_headers: dict[str, str] | None = None
+    ) -> dict[str, str]:
         """Build request headers with auth and policy compliance."""
         headers = {
             "Authorization": f"Bearer {self.mule_config.access_token}",
@@ -352,10 +352,10 @@ class MuleSoftConnector(BaseConnector):
         self,
         method: str,
         url: str,
-        parameters: Dict[str, Any],
-        headers: Dict[str, str],
+        parameters: dict[str, Any],
+        headers: dict[str, str],
         timeout_ms: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Execute an HTTP request to the MuleSoft runtime.
 

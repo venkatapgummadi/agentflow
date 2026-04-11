@@ -9,10 +9,10 @@ Author: Venkata Pavan Kumar Gummadi
 
 from __future__ import annotations
 
+import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
-import uuid
+from typing import Any
 
 
 @dataclass
@@ -24,15 +24,15 @@ class APIEndpoint:
     method: str = "GET"
     path: str = ""
     description: str = ""
-    parameters: List[Dict[str, Any]] = field(default_factory=list)
-    response_schema: Optional[Dict[str, Any]] = None
-    tags: List[str] = field(default_factory=list)
+    parameters: list[dict[str, Any]] = field(default_factory=list)
+    response_schema: dict[str, Any] | None = None
+    tags: list[str] = field(default_factory=list)
     latency_p95_ms: float = 0.0
     cost_per_call: float = 0.0
     rate_limit_rpm: int = 0
     connector_id: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "endpoint_id": self.endpoint_id,
             "name": self.name,
@@ -53,7 +53,7 @@ class APIResponse:
 
     status_code: int = 200
     body: Any = None
-    headers: Dict[str, str] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
     latency_ms: float = 0.0
     connector_id: str = ""
     endpoint_id: str = ""
@@ -78,17 +78,17 @@ class BaseConnector(ABC):
 
     def __init__(
         self,
-        connector_id: Optional[str] = None,
+        connector_id: str | None = None,
         name: str = "",
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ):
         self.connector_id = connector_id or str(uuid.uuid4())[:8]
         self.name = name
         self.config = config or {}
-        self._endpoints: Dict[str, APIEndpoint] = {}
+        self._endpoints: dict[str, APIEndpoint] = {}
 
     @abstractmethod
-    def discover(self) -> List[Dict[str, Any]]:
+    def discover(self) -> list[dict[str, Any]]:
         """
         Discover available APIs on this platform.
 
@@ -101,8 +101,8 @@ class BaseConnector(ABC):
     async def invoke(
         self,
         operation: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        parameters: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         timeout_ms: int = 30000,
     ) -> APIResponse:
         """
@@ -129,10 +129,10 @@ class BaseConnector(ABC):
         endpoint.connector_id = self.connector_id
         self._endpoints[endpoint.endpoint_id] = endpoint
 
-    def get_endpoint(self, endpoint_id: str) -> Optional[APIEndpoint]:
+    def get_endpoint(self, endpoint_id: str) -> APIEndpoint | None:
         """Retrieve endpoint metadata."""
         return self._endpoints.get(endpoint_id)
 
     @property
-    def endpoints(self) -> List[APIEndpoint]:
+    def endpoints(self) -> list[APIEndpoint]:
         return list(self._endpoints.values())

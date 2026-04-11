@@ -257,33 +257,51 @@ class CanaryMigrationController:
                     "mulesoft-endpoint", success=response.success, latency_ms=response.latency_ms
                 )
 
+        legacy_calls = legacy_metrics["calls"]
+        new_calls = new_metrics["calls"]
         return {
             "stage": stage["name"],
             "total_requests": num_requests,
             "legacy": {
-                "calls": legacy_metrics["calls"],
+                "calls": legacy_calls,
                 "errors": legacy_metrics["errors"],
-                "error_rate": legacy_metrics["errors"] / max(legacy_metrics["calls"], 1),
-                "avg_latency_ms": round(legacy_metrics["latency_sum"] / max(legacy_metrics["calls"], 1), 1),
+                "error_rate": (
+                    legacy_metrics["errors"] / max(legacy_calls, 1)
+                ),
+                "avg_latency_ms": round(
+                    legacy_metrics["latency_sum"] / max(legacy_calls, 1), 1
+                ),
             },
             "new": {
-                "calls": new_metrics["calls"],
+                "calls": new_calls,
                 "errors": new_metrics["errors"],
-                "error_rate": new_metrics["errors"] / max(new_metrics["calls"], 1),
-                "avg_latency_ms": round(new_metrics["latency_sum"] / max(new_metrics["calls"], 1), 1),
+                "error_rate": (
+                    new_metrics["errors"] / max(new_calls, 1)
+                ),
+                "avg_latency_ms": round(
+                    new_metrics["latency_sum"] / max(new_calls, 1), 1
+                ),
             },
         }
 
-    def _health_gate(self, metrics: Dict) -> bool:
+    def _health_gate(self, metrics: dict) -> bool:
         """Check if the new API passes the health gate for promotion."""
         new = metrics["new"]
         if new["calls"] == 0:
             return True
-        if new["error_rate"] > self.error_threshold:
-            print(f"  FAILED: Error rate {new['error_rate']:.1%} > threshold {self.error_threshold:.0%}")
+        error_rate = new['error_rate']
+        if error_rate > self.error_threshold:
+            print(
+                f"  FAILED: Error rate {error_rate:.1%} > "
+                f"threshold {self.error_threshold:.0%}"
+            )
             return False
-        if new["avg_latency_ms"] > self.latency_threshold_ms:
-            print(f"  FAILED: Latency {new['avg_latency_ms']}ms > threshold {self.latency_threshold_ms}ms")
+        latency = new["avg_latency_ms"]
+        if latency > self.latency_threshold_ms:
+            print(
+                f"  FAILED: Latency {latency}ms > "
+                f"threshold {self.latency_threshold_ms}ms"
+            )
             return False
         return True
 

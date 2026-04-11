@@ -12,10 +12,10 @@ Author: Venkata Pavan Kumar Gummadi
 
 from __future__ import annotations
 
-from enum import Enum
 import logging
 import random
-from typing import Any, Dict, Optional
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class RetryPolicy:
     def calculate_backoff(
         self,
         attempt: int,
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
         error_class: ErrorClass = ErrorClass.TRANSIENT,
     ) -> float:
         """
@@ -107,7 +107,7 @@ class RetryPolicy:
         return wait
 
     def classify_error(
-        self, status_code: int = 0, error: Optional[Exception] = None
+        self, status_code: int = 0, error: Exception | None = None
     ) -> ErrorClass:
         """Classify an error for adaptive retry behavior."""
         if status_code == 429:

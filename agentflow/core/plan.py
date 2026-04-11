@@ -10,10 +10,10 @@ Author: Venkata Pavan Kumar Gummadi
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
-import uuid
+from typing import Any
 
 
 class StepStatus(Enum):
@@ -65,16 +65,16 @@ class PlanStep:
     step_type: StepType = StepType.API_CALL
     connector_id: str = ""
     operation: str = ""
-    parameters: Dict[str, Any] = field(default_factory=dict)
-    depends_on: List[str] = field(default_factory=list)
-    transform: Optional[str] = None
-    condition: Optional[str] = None
-    fallback_step_id: Optional[str] = None
+    parameters: dict[str, Any] = field(default_factory=dict)
+    depends_on: list[str] = field(default_factory=list)
+    transform: str | None = None
+    condition: str | None = None
+    fallback_step_id: str | None = None
     timeout_ms: int = 30000
-    retry_policy: Optional[Dict[str, Any]] = None
+    retry_policy: dict[str, Any] | None = None
     status: StepStatus = StepStatus.PENDING
     result: Any = None
-    error: Optional[str] = None
+    error: str | None = None
 
     def mark_running(self) -> None:
         self.status = StepStatus.RUNNING
@@ -99,7 +99,7 @@ class PlanStep:
             StepStatus.SKIPPED,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "step_id": self.step_id,
             "name": self.name,
@@ -131,8 +131,8 @@ class ExecutionPlan:
 
     plan_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     intent: str = ""
-    steps: List[PlanStep] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    steps: list[PlanStep] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def add_step(self, **kwargs: Any) -> PlanStep:
         """Create and add a step to the plan."""
@@ -140,14 +140,14 @@ class ExecutionPlan:
         self.steps.append(step)
         return step
 
-    def get_step(self, step_id: str) -> Optional[PlanStep]:
+    def get_step(self, step_id: str) -> PlanStep | None:
         """Retrieve a step by ID."""
         for step in self.steps:
             if step.step_id == step_id:
                 return step
         return None
 
-    def get_ready_steps(self) -> List[PlanStep]:
+    def get_ready_steps(self) -> list[PlanStep]:
         """
         Get all steps whose dependencies are satisfied and are pending.
 
@@ -185,10 +185,10 @@ class ExecutionPlan:
         )
         return completed / len(self.steps)
 
-    def topological_order(self) -> List[PlanStep]:
+    def topological_order(self) -> list[PlanStep]:
         """Return steps in dependency-respecting order (Kahn's algorithm)."""
-        in_degree: Dict[str, int] = {s.step_id: 0 for s in self.steps}
-        adj: Dict[str, List[str]] = {s.step_id: [] for s in self.steps}
+        in_degree: dict[str, int] = {s.step_id: 0 for s in self.steps}
+        adj: dict[str, list[str]] = {s.step_id: [] for s in self.steps}
 
         for step in self.steps:
             for dep in step.depends_on:
@@ -197,7 +197,7 @@ class ExecutionPlan:
                     in_degree[step.step_id] += 1
 
         queue = [sid for sid, deg in in_degree.items() if deg == 0]
-        ordered: List[PlanStep] = []
+        ordered: list[PlanStep] = []
 
         while queue:
             current = queue.pop(0)
@@ -211,7 +211,7 @@ class ExecutionPlan:
 
         return ordered
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "plan_id": self.plan_id,
             "intent": self.intent,

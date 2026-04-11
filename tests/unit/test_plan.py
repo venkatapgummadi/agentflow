@@ -6,8 +6,7 @@ Verifies DAG construction, topological ordering, and step lifecycle.
 Author: Venkata Pavan Kumar Gummadi
 """
 
-import pytest
-from agentflow.core.plan import ExecutionPlan, PlanStep, StepStatus, StepType
+from agentflow.core.plan import ExecutionPlan, PlanStep, StepStatus
 
 
 class TestPlanStep:
@@ -106,7 +105,7 @@ class TestExecutionPlan:
         plan = ExecutionPlan(intent="test")
         s1 = plan.add_step(name="step1")
         s2 = plan.add_step(name="step2", depends_on=[s1.step_id])
-        s3 = plan.add_step(name="step3", depends_on=[s2.step_id])
+        plan.add_step(name="step3", depends_on=[s2.step_id])
 
         order = plan.topological_order()
         names = [s.name for s in order]
@@ -116,7 +115,7 @@ class TestExecutionPlan:
         plan = ExecutionPlan(intent="test")
         s1 = plan.add_step(name="step1")
         s2 = plan.add_step(name="step2")
-        s3 = plan.add_step(name="step3", depends_on=[s1.step_id, s2.step_id])
+        plan.add_step(name="step3", depends_on=[s1.step_id, s2.step_id])
 
         order = plan.topological_order()
         names = [s.name for s in order]

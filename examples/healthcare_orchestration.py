@@ -306,12 +306,17 @@ class ClinicalDecisionAgent(BaseAgent):
 
         decision = self._evaluate_rules(lab_results, referral_type)
 
-        self.emit_event(
-            context,
-            EventType.VALIDATION_PASSED if decision["recommended"] else EventType.VALIDATION_FAILED,
-            message=f"Clinical decision: {'RECOMMENDED' if decision['recommended'] else 'NOT INDICATED'}",
-            payload=decision,
+        event_type = (
+            EventType.VALIDATION_PASSED
+            if decision["recommended"]
+            else EventType.VALIDATION_FAILED
         )
+        message = (
+            "Clinical decision: RECOMMENDED"
+            if decision["recommended"]
+            else "Clinical decision: NOT INDICATED"
+        )
+        self.emit_event(context, event_type, message=message, payload=decision)
 
         return decision
 
@@ -328,15 +333,23 @@ class ClinicalDecisionAgent(BaseAgent):
             value = resource.get("valueQuantity", {}).get("value")
 
             if "HbA1c" in code and value and value > thresholds.get("hba1c", 999):
-                findings.append(f"Elevated HbA1c: {value}% (threshold: {thresholds['hba1c']}%)")
+                hba1c_thresh = thresholds['hba1c']
+                findings.append(f"Elevated HbA1c: {value}% (threshold: {hba1c_thresh}%)")
             elif "LDL" in code and value and value > thresholds.get("ldl", 999):
-                findings.append(f"Elevated LDL: {value} mg/dL (threshold: {thresholds['ldl']} mg/dL)")
+                ldl_thresh = thresholds['ldl']
+                findings.append(
+                    f"Elevated LDL: {value} mg/dL (threshold: {ldl_thresh} mg/dL)"
+                )
             elif "Blood Pressure" in code:
                 bp_str = resource.get("valueString", "")
                 try:
                     systolic = int(bp_str.split("/")[0])
                     if systolic > thresholds.get("systolic_bp", 999):
-                        findings.append(f"Elevated systolic BP: {systolic} mmHg (threshold: {thresholds['systolic_bp']})")
+                        bp_thresh = thresholds['systolic_bp']
+                        findings.append(
+                            f"Elevated systolic BP: {systolic} mmHg "
+                            f"(threshold: {bp_thresh})"
+                        )
                 except (ValueError, IndexError):
                     pass
 
@@ -392,10 +405,14 @@ async def run_patient_referral_workflow():
     labs = await fhir.invoke("Observation", parameters={"patient_id": patient_id})
     coverage = await fhir.invoke("Coverage", parameters={"patient_id": patient_id})
 
-    print(f"  Patient: {demographics.body['name'][0]['given'][0]} {demographics.body['name'][0]['family']}")
+    given_name = demographics.body['name'][0]['given'][0]
+    family_name = demographics.body['name'][0]['family']
+    print(f"  Patient: {given_name} {family_name}")
     print(f"  DOB: {demographics.body['birthDate']}")
     print(f"  Lab results: {len(labs.body['entry'])} observations")
-    print(f"  Insurance: {coverage.body['payor'][0]['display']} ({coverage.body['class'][0]['value']})")
+    payor = coverage.body['payor'][0]['display']
+    plan = coverage.body['class'][0]['value']
+    print(f"  Insurance: {payor} ({plan})")
 
     # Phase 2: Clinical decision support
     print("\n[Phase 2] Clinical decision evaluation...")
@@ -416,7 +433,9 @@ async def run_patient_referral_workflow():
 
     # Phase 3: Insurance verification
     print("\n[Phase 3] Insurance eligibility and prior authorization...")
-    eligibility = await insurance.invoke("eligibility/verify", parameters={"patient_id": patient_id})
+    eligibility = await insurance.invoke(
+        "eligibility/verify", parameters={"patient_id": patient_id}
+    )
     print(f"  Eligible: {eligibility.body['eligible']}")
     print(f"  Specialist copay: ${eligibility.body['specialist_copay']}")
     print(f"  Deductible remaining: ${eligibility.body['deductible_remaining']}")
