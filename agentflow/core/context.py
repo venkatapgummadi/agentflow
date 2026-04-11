@@ -14,11 +14,11 @@ Author: Venkata Pavan Kumar Gummadi
 from __future__ import annotations
 
 import asyncio
-import time
-import uuid
 from dataclasses import dataclass, field
 from enum import Enum
+import time
 from typing import Any, Dict, List, Optional
+import uuid
 
 
 class EventType(Enum):

@@ -12,9 +12,9 @@ Author: Venkata Pavan Kumar Gummadi
 
 from __future__ import annotations
 
+from enum import Enum
 import logging
 import random
-from enum import Enum
 from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
