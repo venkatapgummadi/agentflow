@@ -8,8 +8,8 @@ Author: Venkata Pavan Kumar Gummadi
 
 from agentflow.routing.dynamic_router import (
     DynamicRouter,
-    RoutingWeights,
     EndpointScore,
+    RoutingWeights,
 )
 
 

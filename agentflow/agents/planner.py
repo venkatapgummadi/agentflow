@@ -17,7 +17,7 @@ import logging
 from typing import Any
 
 from agentflow.agents.base_agent import BaseAgent
-from agentflow.core.context import EventType, OrchestrationContext
+from agentflow.core.context import OrchestrationContext
 from agentflow.core.plan import ExecutionPlan, PlanStep, StepType
 
 logger = logging.getLogger(__name__)
@@ -188,7 +188,7 @@ class PlannerAgent(BaseAgent):
 
         Analyzes input requirements to find data dependencies.
         """
-        deps: List[str] = []
+        deps: list[str] = []
         required_inputs = operation.get("inputs_from", [])
 
         for input_ref in required_inputs:
@@ -247,7 +247,6 @@ class PlannerAgent(BaseAgent):
         if not plan.steps:
             return 0
 
-        step_ids = {s.step_id for s in plan.steps}
         memo: dict[str, int] = {}
 
         def depth(step: PlanStep) -> int:

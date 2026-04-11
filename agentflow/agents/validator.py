@@ -86,7 +86,7 @@ class ValidatorAgent(BaseAgent):
         """Register a validation rule."""
         self._rules.append(rule)
 
-    async def execute(self, context: OrchestrationContext, **kwargs: Any) -> Dict[str, Any]:
+    async def execute(self, context: OrchestrationContext, **kwargs: Any) -> dict[str, Any]:
         plan = kwargs.get("plan")
         outputs = kwargs.get("outputs", {})
         return await self.validate(plan, context, outputs)
@@ -188,7 +188,7 @@ class ValidatorAgent(BaseAgent):
         self, plan: ExecutionPlan, outputs: dict[str, Any]
     ) -> list[ValidationResult]:
         """Verify completed steps have non-null outputs."""
-        results: List[ValidationResult] = []
+        results: list[ValidationResult] = []
         for step in plan.steps:
             if step.status == StepStatus.COMPLETED:
                 has_output = step.step_id in outputs and outputs[step.step_id] is not None
@@ -214,7 +214,7 @@ class ValidatorAgent(BaseAgent):
     ) -> ValidationResult:
         """Evaluate a custom validation rule."""
         try:
-            step = plan.get_step(rule.target_step) if rule.target_step else None
+            plan.get_step(rule.target_step) if rule.target_step else None
             output = outputs.get(rule.target_step)
 
             if rule.rule_type == "not_null":

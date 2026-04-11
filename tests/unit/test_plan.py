@@ -74,7 +74,7 @@ class TestExecutionPlan:
     def test_get_ready_steps_after_completion(self):
         plan = ExecutionPlan(intent="test")
         s1 = plan.add_step(name="step1")
-        s2 = plan.add_step(name="step2", depends_on=[s1.step_id])
+        plan.add_step(name="step2", depends_on=[s1.step_id])
 
         s1.mark_completed("done")
         ready = plan.get_ready_steps()
