@@ -1,0 +1,285 @@
+#%RAML 1.0
+title: AgentFlow API
+version: v1
+baseUri: https://{environment}.cloudhub.io/agentflow/api/{version}
+baseUriParameters:
+  environment:
+    description: CloudHub environment subdomain
+    default: agentflow-demo
+mediaType: application/json
+
+documentation:
+  - title: Overview
+    content: |
+      AgentFlow MuleSoft Connector — bridges MuleSoft Anypoint Platform with the
+      AgentFlow AI orchestration framework (github.com/venkatapgummadi/agentflow).
+
+      Use this API to submit natural-language orchestration intents and receive
+      dynamically composed, agent-executed API workflow results — without writing
+      custom integration logic for each use case.
+
+  - title: Authentication
+    content: |
+      All endpoints require a Client ID and Client Secret pair issued via
+      Anypoint API Manager. Pass them as headers:
+        client_id: <your-client-id>
+        client_secret: <your-client-secret>
+
+traits:
+  secured:
+    headers:
+      client_id:
+        type: string
+        required: true
+      client_secret:
+        type: string
+        required: true
+    responses:
+      401:
+        description: Unauthorized — invalid or missing credentials
+        body:
+          application/json:
+            example:
+              error: "Unauthorized"
+              message: "Invalid client_id or client_secret"
+      403:
+        description: Forbidden — policy violation
+  pageable:
+    queryParameters:
+      page:
+        type: integer
+        default: 1
+        minimum: 1
+      pageSize:
+        type: integer
+        default: 20
+        maximum: 100
+
+types:
+  OrchestrationRequest:
+    type: object
+    properties:
+      intent:
+        type: string
+        description: Natural language description of the API workflow to execute
+        example: "Fetch customer 12345 from CRM, enrich with credit score, create loan application if score > 700"
+        minLength: 10
+        maxLength: 1000
+      parameters:
+        type: object
+        required: false
+        description: Key-value pairs injected into the workflow at runtime
+        example:
+          customer_id: "12345"
+          threshold: 700
+      connectors:
+        type: array
+        items: string
+        required: false
+        description: Specific connector IDs to restrict routing to
+        example: ["mulesoft-anypoint", "salesforce-crm"]
+      timeout_ms:
+        type: integer
+        required: false
+        default: 30000
+        description: Maximum execution time in milliseconds
+      trace:
+        type: boolean
+        required: false
+        default: false
+        description: Return full execution trace including per-step timings
+
+  OrchestrationResponse:
+    type: object
+    properties:
+      execution_id:
+        type: string
+        description: Unique identifier for this orchestration run
+      intent:
+        type: string
+      status:
+        type: string
+        enum: [completed, failed, partial]
+      steps_executed:
+        type: integer
+      steps_succeeded:
+        type: integer
+      duration_ms:
+        type: integer
+      outputs:
+        type: object
+        description: Map of step_name -> result for each completed step
+      validation:
+        type: object
+        properties:
+          passed: boolean
+          errors: string[]
+          warnings: string[]
+      trace:
+        type: object
+        required: false
+        description: Full execution trace (only when request.trace=true)
+
+  HealthResponse:
+    type: object
+    properties:
+      status:
+        type: string
+        enum: [UP, DOWN, DEGRADED]
+      agentflow_version:
+        type: string
+      mulesoft_runtime:
+        type: string
+      agents:
+        type: object
+        properties:
+          planner: string
+          executor: string
+          validator: string
+      uptime_seconds:
+        type: integer
+
+  ErrorResponse:
+    type: object
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+      execution_id:
+        type: string
+        required: false
+      timestamp:
+        type: string
+
+/orchestrate:
+  description: Submit an orchestration intent for agent-driven execution
+  post:
+    is: [secured]
+    description: |
+      Submit a natural-language intent to AgentFlow. The Planner agent decomposes
+      it into an execution DAG, the Executor runs steps in parallel where possible,
+      and the Validator checks results before returning.
+    body:
+      application/json:
+        type: OrchestrationRequest
+        examples:
+          fintech:
+            value:
+              intent: "Fetch customer profile from Salesforce, check credit score from Experian, and create a loan pre-approval if score exceeds 700"
+              parameters:
+                customer_id: "SF-12345"
+                loan_amount: 50000
+              timeout_ms: 15000
+              trace: false
+          healthcare:
+            value:
+              intent: "Retrieve patient FHIR record, validate insurance eligibility, and schedule specialist referral"
+              parameters:
+                patient_id: "P-98765"
+                specialty: "cardiology"
+              timeout_ms: 20000
+    responses:
+      200:
+        description: Orchestration completed successfully
+        body:
+          application/json:
+            type: OrchestrationResponse
+            example:
+              execution_id: "exec-a1b2c3d4"
+              intent: "Fetch customer profile and check credit score"
+              status: completed
+              steps_executed: 3
+              steps_succeeded: 3
+              duration_ms: 842
+              outputs:
+                fetch_customer:
+                  id: "SF-12345"
+                  name: "John Doe"
+                  email: "john@example.com"
+                check_credit_score:
+                  score: 742
+                  bureau: "Experian"
+                create_loan_application:
+                  application_id: "LOAN-789"
+                  status: "pre_approved"
+              validation:
+                passed: true
+                errors: []
+                warnings: []
+      422:
+        description: Intent could not be parsed or no matching APIs found
+        body:
+          application/json:
+            type: ErrorResponse
+      500:
+        description: Orchestration failed during execution
+        body:
+          application/json:
+            type: ErrorResponse
+
+/orchestrate/{executionId}:
+  uriParameters:
+    executionId:
+      type: string
+      description: Execution ID returned by POST /orchestrate
+  get:
+    is: [secured]
+    description: Retrieve the result or status of a previous orchestration run
+    responses:
+      200:
+        body:
+          application/json:
+            type: OrchestrationResponse
+      404:
+        body:
+          application/json:
+            type: ErrorResponse
+
+/health:
+  get:
+    description: Health check — returns status of AgentFlow agents and MuleSoft runtime
+    responses:
+      200:
+        body:
+          application/json:
+            type: HealthResponse
+            example:
+              status: UP
+              agentflow_version: "1.0.0"
+              mulesoft_runtime: "4.6.0"
+              agents:
+                planner: UP
+                executor: UP
+                validator: UP
+              uptime_seconds: 86400
+
+/apis:
+  get:
+    is: [secured]
+    description: List all API endpoints discovered via AgentFlow connectors
+    is: [pageable]
+    queryParameters:
+      connector:
+        type: string
+        required: false
+        description: Filter by connector ID (e.g., mulesoft-anypoint)
+      tag:
+        type: string
+        required: false
+        description: Filter by capability tag (e.g., crm, payments, healthcare)
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              total: 42
+              page: 1
+              pageSize: 20
+              apis:
+                - id: "api-001"
+                  name: "Customer CRM API"
+                  connector: "salesforce"
+                  tags: ["crm", "customer", "profile"]
+                  latency_p95_ms: 120
+                  health: "healthy"

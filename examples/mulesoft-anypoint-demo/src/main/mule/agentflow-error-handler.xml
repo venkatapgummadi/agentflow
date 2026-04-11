@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core
+          http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/ee/core
+          http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+    <!-- ═══════════════════════════════════════════════════════════
+         GLOBAL ERROR HANDLER
+         Catches and formats all errors into consistent API responses
+    ════════════════════════════════════════════════════════════════ -->
+    <error-handler name="AgentFlow_Global_Error_Handler"
+                   doc:name="AgentFlow Global Error Handler">
+
+        <!-- APIKit bad request (400) -->
+        <on-error-propagate type="APIKIT:BAD_REQUEST"
+                            enableNotifications="true"
+                            logException="false">
+            <ee:transform doc:name="400 Bad Request">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    error:     "BAD_REQUEST",
+    message:   error.description,
+    timestamp: now() as String
+}]]></ee:set-payload>
+                </ee:message>
+                <ee:variables>
+                    <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                </ee:variables>
+            </ee:transform>
+        </on-error-propagate>
+
+        <!-- APIKit not found (404) -->
+        <on-error-propagate type="APIKIT:NOT_FOUND"
+                            enableNotifications="true"
+                            logException="false">
+            <ee:transform doc:name="404 Not Found">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    error:     "NOT_FOUND",
+    message:   "Resource not found: " ++ (attributes.requestPath default ""),
+    timestamp: now() as String
+}]]></ee:set-payload>
+                </ee:message>
+                <ee:variables>
+                    <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                </ee:variables>
+            </ee:transform>
+        </on-error-propagate>
+
+        <!-- APIKit method not allowed (405) -->
+        <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED"
+                            enableNotifications="true"
+                            logException="false">
+            <ee:transform doc:name="405 Method Not Allowed">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    error:     "METHOD_NOT_ALLOWED",
+    message:   "HTTP method not allowed on this resource",
+    timestamp: now() as String
+}]]></ee:set-payload>
+                </ee:message>
+                <ee:variables>
+                    <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                </ee:variables>
+            </ee:transform>
+        </on-error-propagate>
+
+        <!-- Unsupported media type (415) -->
+        <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE"
+                            enableNotifications="true"
+                            logException="false">
+            <ee:transform doc:name="415 Unsupported Media Type">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    error:     "UNSUPPORTED_MEDIA_TYPE",
+    message:   "Content-Type must be application/json",
+    timestamp: now() as String
+}]]></ee:set-payload>
+                </ee:message>
+                <ee:variables>
+                    <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                </ee:variables>
+            </ee:transform>
+        </on-error-propagate>
+
+        <!-- AgentFlow engine unreachable (502) -->
+        <on-error-propagate type="HTTP:CONNECTIVITY, HTTP:TIMEOUT, HTTP:REMOTE_SERVER_UNAVAILABLE"
+                            enableNotifications="true"
+                            logException="true">
+            <logger level="ERROR"
+                    message='#["[AgentFlow] Engine unreachable: " ++ error.description]'
+                    doc:name="Log Engine Error"/>
+            <ee:transform doc:name="502 Bad Gateway">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    error:     "ENGINE_UNAVAILABLE",
+    message:   "AgentFlow engine is temporarily unavailable. Please retry.",
+    timestamp: now() as String
+}]]></ee:set-payload>
+                </ee:message>
+                <ee:variables>
+                    <ee:set-variable variableName="httpStatus">502</ee:set-variable>
+                </ee:variables>
+            </ee:transform>
+        </on-error-propagate>
+
+        <!-- AgentFlow returned 422 Unprocessable Intent -->
+        <on-error-propagate type="HTTP:BAD_REQUEST"
+                            enableNotifications="true"
+                            logException="false">
+            <logger level="WARN"
+                    message='#["[AgentFlow] Intent could not be processed: " ++ error.description]'
+                    doc:name="Log 422"/>
+            <ee:transform doc:name="422 Unprocessable Intent">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    error:     "INTENT_UNPROCESSABLE",
+    message:   "The intent could not be parsed or no matching APIs were found.",
+    timestamp: now() as String
+}]]></ee:set-payload>
+                </ee:message>
+                <ee:variables>
+                    <ee:set-variable variableName="httpStatus">422</ee:set-variable>
+                </ee:variables>
+            </ee:transform>
+        </on-error-propagate>
+
+        <!-- Catch-all (500) -->
+        <on-error-propagate type="ANY"
+                            enableNotifications="true"
+                            logException="true">
+            <logger level="ERROR"
+                    message='#["[AgentFlow] Unexpected error: " ++ error.description]'
+                    doc:name="Log Unexpected Error"/>
+            <ee:transform doc:name="500 Internal Server Error">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    error:        "INTERNAL_ERROR",
+    message:      "An unexpected error occurred. Please contact support.",
+    execution_id: (vars.originalRequest.request_id) default null,
+    timestamp:    now() as String
+}]]></ee:set-payload>
+                </ee:message>
+                <ee:variables>
+                    <ee:set-variable variableName="httpStatus">500</ee:set-variable>
+                </ee:variables>
+            </ee:transform>
+        </on-error-propagate>
+
+    </error-handler>
+
+</mule>

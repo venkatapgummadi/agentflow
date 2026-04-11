@@ -1,0 +1,11 @@
+http:
+  port: "${http.port}"                         # Set to 8081 locally; CloudHub auto-assigns
+
+agentflow:
+  host: "${agentflow.host}"                    # e.g. localhost (local) or your server IP
+  port: "${agentflow.port}"                    # Default: 8000 (AgentFlow FastAPI server)
+  protocol: "${agentflow.protocol}"            # http or https
+
+anypoint:
+  client_id: "${anypoint.client_id}"           # From API Manager → Your API → Credentials
+  client_secret: "${anypoint.client_secret}"   # Secured property — never commit plaintext

@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+      xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core
+          http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/http
+          http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+        http://www.mulesoft.org/schema/mule/mule-apikit
+          http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd
+        http://www.mulesoft.org/schema/mule/ee/core
+          http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+    <!-- ═══════════════════════════════════════════════════════════
+         HTTP LISTENER CONFIG
+         Listens on port 8081 (local) or uses CloudHub auto-assign
+    ════════════════════════════════════════════════════════════════ -->
+    <http:listener-config name="HTTP_Listener_Config"
+                          doc:name="HTTP Listener Config">
+        <http:listener-connection host="0.0.0.0" port="${http.port}"/>
+    </http:listener-config>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         AGENTFLOW HTTP REQUEST CONFIG
+         Points to the AgentFlow Python service
+    ════════════════════════════════════════════════════════════════ -->
+    <http:request-config name="AgentFlow_Request_Config"
+                         doc:name="AgentFlow HTTP Request Config">
+        <http:request-connection host="${agentflow.host}"
+                                 port="${agentflow.port}"
+                                 protocol="${agentflow.protocol}"/>
+    </http:request-config>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         APIKIT ROUTER CONFIG
+    ════════════════════════════════════════════════════════════════ -->
+    <apikit:config name="AgentFlow_APIKit_Config"
+                   api="agentflow-api.raml"
+                   outboundHeadersMapName="outboundHeaders"
+                   httpStatusVarName="httpStatus"
+                   doc:name="APIKit Config"/>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         MAIN ENTRY FLOW
+         Receives HTTP requests → APIKit router → sub-flows
+    ════════════════════════════════════════════════════════════════ -->
+    <flow name="agentflow-main-flow" doc:name="AgentFlow Main Flow">
+        <http:listener config-ref="HTTP_Listener_Config"
+                       path="/agentflow/api/v1/*"
+                       doc:name="HTTP Listener"/>
+        <apikit:router config-ref="AgentFlow_APIKit_Config"
+                       doc:name="APIKit Router"/>
+        <error-handler ref="AgentFlow_Global_Error_Handler"/>
+    </flow>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         POST /orchestrate
+         Submits an intent to the AgentFlow Python engine
+    ════════════════════════════════════════════════════════════════ -->
+    <flow name="post:\orchestrate:application\json:AgentFlow_APIKit_Config"
+          doc:name="POST /orchestrate">
+
+        <!-- 1. Log incoming intent -->
+        <logger level="INFO"
+                message='#["[AgentFlow] Received orchestration intent: " ++ (payload.intent default "")]'
+                doc:name="Log Intent"/>
+
+        <!-- 2. Validate required fields -->
+        <ee:transform doc:name="Validate and Enrich Request">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    intent:      payload.intent,
+    parameters:  payload.parameters  default {},
+    connectors:  payload.connectors  default [],
+    timeout_ms:  payload.timeout_ms  default 30000,
+    trace:       payload.trace       default false,
+    source:      "mulesoft-anypoint",
+    request_id:  uuid()
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+
+        <!-- 3. Store request for error handling -->
+        <set-variable variableName="originalRequest"
+                      value="#[payload]"
+                      doc:name="Store Original Request"/>
+
+        <!-- 4. Call AgentFlow Python service -->
+        <http:request config-ref="AgentFlow_Request_Config"
+                      method="POST"
+                      path="/orchestrate"
+                      doc:name="Call AgentFlow Engine">
+            <http:headers><![CDATA[#[{
+                "Content-Type": "application/json",
+                "X-Source": "mulesoft-anypoint",
+                "X-Request-ID": vars.originalRequest.request_id
+            }]]]></http:headers>
+            <http:response-validator>
+                <http:success-status-code-validator values="200,202"/>
+            </http:response-validator>
+            <http:request-builder>
+                <http:body>#[payload]</http:body>
+            </http:request-builder>
+        </http:request>
+
+        <!-- 5. Transform AgentFlow response to API contract -->
+        <ee:transform doc:name="Map AgentFlow Response">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    execution_id:      payload.execution_id,
+    intent:            payload.intent,
+    status:            payload.status,
+    steps_executed:    payload.steps_executed   default 0,
+    steps_succeeded:   payload.steps_succeeded  default 0,
+    duration_ms:       payload.duration_ms      default 0,
+    outputs:           payload.outputs          default {},
+    validation: {
+        passed:   payload.validation.passed   default true,
+        errors:   payload.validation.errors   default [],
+        warnings: payload.validation.warnings default []
+    },
+    (trace: payload.trace) if (vars.originalRequest.trace == true)
+}]]></ee:set-payload>
+            </ee:message>
+            <ee:variables>
+                <ee:set-variable variableName="httpStatus">200</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+
+        <logger level="INFO"
+                message='#["[AgentFlow] Orchestration completed: " ++ (payload.execution_id default "") ++ " status=" ++ (payload.status default "")]'
+                doc:name="Log Result"/>
+    </flow>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         GET /orchestrate/{executionId}
+         Retrieve a previous execution result
+    ════════════════════════════════════════════════════════════════ -->
+    <flow name="get:\orchestrate\{executionId}:AgentFlow_APIKit_Config"
+          doc:name="GET /orchestrate/{executionId}">
+
+        <logger level="INFO"
+                message='#["[AgentFlow] Fetching execution: " ++ attributes.uriParams.executionId]'
+                doc:name="Log Lookup"/>
+
+        <http:request config-ref="AgentFlow_Request_Config"
+                      method="GET"
+                      path="#['/orchestrate/' ++ attributes.uriParams.executionId]"
+                      doc:name="Fetch Execution from AgentFlow">
+            <http:response-validator>
+                <http:success-status-code-validator values="200,404"/>
+            </http:response-validator>
+        </http:request>
+
+        <choice doc:name="Route by Response Status">
+            <when expression="#[attributes.statusCode == 404]">
+                <ee:transform doc:name="Not Found Response">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    error:        "NOT_FOUND",
+    message:      "Execution ID not found: " ++ attributes.uriParams.executionId,
+    timestamp:    now() as String
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </when>
+            <otherwise>
+                <ee:transform doc:name="Pass Through Response">
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">200</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </otherwise>
+        </choice>
+    </flow>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         GET /health
+         Aggregates health from AgentFlow engine + Mule runtime
+    ════════════════════════════════════════════════════════════════ -->
+    <flow name="get:\health:AgentFlow_APIKit_Config"
+          doc:name="GET /health">
+
+        <!-- Call AgentFlow health endpoint -->
+        <http:request config-ref="AgentFlow_Request_Config"
+                      method="GET"
+                      path="/health"
+                      doc:name="AgentFlow Health Check">
+            <http:response-validator>
+                <http:success-status-code-validator values="200,503"/>
+            </http:response-validator>
+        </http:request>
+
+        <set-variable variableName="agentflowHealth"
+                      value="#[payload]"
+                      doc:name="Store AgentFlow Health"/>
+
+        <!-- Compose combined health response -->
+        <ee:transform doc:name="Build Health Response">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var af = vars.agentflowHealth
+---
+{
+    status:             af.status default "UP",
+    agentflow_version:  af.version default "1.0.0",
+    mulesoft_runtime:   p('mule.home') splitBy '/' [-1] default "4.x",
+    agents: {
+        planner:   af.agents.planner  default "UP",
+        executor:  af.agents.executor  default "UP",
+        validator: af.agents.validator default "UP"
+    },
+    uptime_seconds: af.uptime_seconds default 0
+}]]></ee:set-payload>
+            </ee:message>
+            <ee:variables>
+                <ee:set-variable variableName="httpStatus">200</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+    </flow>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         GET /apis
+         Returns discovered APIs from AgentFlow connectors
+    ════════════════════════════════════════════════════════════════ -->
+    <flow name="get:\apis:AgentFlow_APIKit_Config"
+          doc:name="GET /apis">
+
+        <ee:transform doc:name="Build Query Params">
+            <ee:variables>
+                <ee:set-variable variableName="queryParams"><![CDATA[%dw 2.0
+output application/java
+---
+{
+    page:      attributes.queryParams.page     default "1",
+    page_size: attributes.queryParams.pageSize default "20",
+    connector: attributes.queryParams.connector,
+    tag:       attributes.queryParams.tag
+} filterObject (value) -> value != null]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+
+        <http:request config-ref="AgentFlow_Request_Config"
+                      method="GET"
+                      path="/apis"
+                      doc:name="Fetch APIs from AgentFlow">
+            <http:query-params>#[vars.queryParams]</http:query-params>
+        </http:request>
+
+        <ee:transform doc:name="Set Status 200">
+            <ee:variables>
+                <ee:set-variable variableName="httpStatus">200</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+    </flow>
+
+</mule>

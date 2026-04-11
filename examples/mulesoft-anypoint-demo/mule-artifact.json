@@ -1,0 +1,23 @@
+{
+  "minMuleVersion": "4.6.0",
+  "name": "agentflow-anypoint-demo",
+  "configs": [
+    "agentflow-main.xml",
+    "agentflow-error-handler.xml"
+  ],
+  "secureProperties": [
+    "anypoint.client_id",
+    "anypoint.client_secret",
+    "agentflow.api_key"
+  ],
+  "requiredProduct": "MULE_EE",
+  "classLoaderModelLoaderDescriptor": {
+    "id": "mule",
+    "attributes": {
+      "exportedResources": []
+    }
+  },
+  "bundleDescriptorLoader": {
+    "id": "mule"
+  }
+}
