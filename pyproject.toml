@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "agentflow"
+version = "1.0.0"
+description = "AI-Powered Multi-Agent API Orchestration Framework with MuleSoft support"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Venkata Pavan Kumar Gummadi", email = "venkata.p.gummadi@ieee.org"},
+]
+keywords = [
+    "ai", "agents", "api-orchestration", "mulesoft", "anypoint",
+    "multi-agent", "resilience", "circuit-breaker", "dynamic-routing",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: System :: Distributed Computing",
+]
+
+dependencies = [
+    "aiohttp>=3.9.0",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-asyncio>=0.21",
+    "pytest-cov>=4.1",
+    "ruff>=0.1.0",
+    "mypy>=1.5",
+]
+mulesoft = [
+    "aiohttp>=3.9.0",
+    "pyyaml>=6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/venkatapgummadi/agentflow"
+Repository = "https://github.com/venkatapgummadi/agentflow"
+Issues = "https://github.com/venkatapgummadi/agentflow/issues"
+
+[tool.setuptools.packages.find]
+include = ["agentflow*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
