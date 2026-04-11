@@ -110,6 +110,28 @@ See the [docs/](docs/) directory for detailed guides:
 - [Writing Custom Agents](docs/custom_agents.md)
 - [Routing Strategies](docs/routing.md)
 
+## Who's Using AgentFlow?
+
+Are you using AgentFlow at your company or in a project? We'd love to hear from you!
+
+👉 **[Open an Adoption Story issue](../../issues/new?template=adoption-story.md)** — takes 2 minutes and helps the project grow.
+
+| Company / Project | Industry | Use Case |
+|---|---|---|
+| *Your company here* | *Your industry* | *[Share your story →](../../issues/new?template=adoption-story.md)* |
+
+## Community
+
+| Channel | Purpose |
+|---|---|
+| [💬 Discussions — Show & Tell](../../discussions/categories/show-and-tell) | Share what you built |
+| [❓ Discussions — Q&A](../../discussions/categories/q-a) | Ask questions |
+| [🔌 Integration Requests](../../issues/new?template=integration-request.md) | Request a new connector |
+| [✨ Feature Requests](../../issues/new?template=feature-request.md) | Suggest improvements |
+| [🐛 Bug Reports](../../issues/new?template=bug-report.md) | Report issues |
+
+If AgentFlow saves you time or solves a real problem, a ⭐ on this repo goes a long way — it helps more engineers find the framework.
+
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE) for details.
@@ -119,3 +141,5 @@ Apache License 2.0 — see [LICENSE](LICENSE) for details.
 **Venkata Pavan Kumar Gummadi**
 - Research focus: AI-driven API orchestration and enterprise integration intelligence
 - [GitHub](https://github.com/venkatapgummadi)
+- [LinkedIn](https://www.linkedin.com/in/venkata-p-1841146/)
+- [IEEE](https://ieee.org) Member
