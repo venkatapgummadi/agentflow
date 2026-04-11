@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 import time
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ class CircuitBreaker:
         # Metrics for adaptive behavior
         self._total_requests = 0
         self._total_failures = 0
-        self._window_failures: list[float] = []
+        self._window_failures: List[float] = []
 
     @property
     def state(self) -> CircuitState:

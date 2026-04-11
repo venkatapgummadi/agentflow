@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,10 @@ ENTITY_PATTERNS = {
     "numeric_id": r"\b(\d{3,})\b",
     "email": r"\b[\w.+-]+@[\w-]+\.[\w.]+\b",
     "api_name": r"\b(?:from|via|using|through)\s+(\w+(?:\s+\w+)?)\b",
-    "threshold": r"\b(?:greater|less|above|below|more|fewer|over|under)\s+(?:than\s+)?(\d+(?:\.\d+)?)\b",
+    "threshold": (
+        r"\b(?:greater|less|above|below|more|fewer|over|under)\s+"
+        r"(?:than\s+)?(\d+(?:\.\d+)?)\b"
+    ),
     "field_name": r"\b(?:field|column|attribute|property)\s+['\"]?(\w+)['\"]?\b",
 }
 

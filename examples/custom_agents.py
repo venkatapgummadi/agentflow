@@ -78,7 +78,10 @@ class CreditScoringAgent(BaseAgent):
                 "debt_penalty": round(debt_penalty, 1),
                 "history_bonus": round(history_bonus, 1),
             },
-            "recommendation": "approve" if score >= 700 else "review" if score >= 600 else "decline",
+            "recommendation": (
+                "approve" if score >= 700 else "review"
+                if score >= 600 else "decline"
+            ),
         }
 
 

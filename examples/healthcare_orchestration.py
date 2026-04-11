@@ -49,13 +49,55 @@ class FHIRConnector(BaseConnector):
     def _register_fhir_endpoints(self):
         """Register standard FHIR R4 resource endpoints."""
         fhir_resources = [
-            ("Patient", "GET", "/Patient/{id}", "Retrieve patient demographics", ["patient", "demographics", "ehr"]),
-            ("Observation", "GET", "/Observation?patient={id}", "Fetch lab results and vitals", ["labs", "vitals", "observation"]),
-            ("Condition", "GET", "/Condition?patient={id}", "Get active diagnoses", ["diagnosis", "condition", "clinical"]),
-            ("MedicationRequest", "GET", "/MedicationRequest?patient={id}", "Active prescriptions", ["medication", "pharmacy", "rx"]),
-            ("ServiceRequest", "POST", "/ServiceRequest", "Create referral order", ["referral", "order", "specialist"]),
-            ("Coverage", "GET", "/Coverage?beneficiary={id}", "Insurance coverage details", ["insurance", "coverage", "eligibility"]),
-            ("Communication", "POST", "/Communication", "Send secure message", ["messaging", "notification", "hipaa"]),
+            (
+                "Patient",
+                "GET",
+                "/Patient/{id}",
+                "Retrieve patient demographics",
+                ["patient", "demographics", "ehr"],
+            ),
+            (
+                "Observation",
+                "GET",
+                "/Observation?patient={id}",
+                "Fetch lab results and vitals",
+                ["labs", "vitals", "observation"],
+            ),
+            (
+                "Condition",
+                "GET",
+                "/Condition?patient={id}",
+                "Get active diagnoses",
+                ["diagnosis", "condition", "clinical"],
+            ),
+            (
+                "MedicationRequest",
+                "GET",
+                "/MedicationRequest?patient={id}",
+                "Active prescriptions",
+                ["medication", "pharmacy", "rx"],
+            ),
+            (
+                "ServiceRequest",
+                "POST",
+                "/ServiceRequest",
+                "Create referral order",
+                ["referral", "order", "specialist"],
+            ),
+            (
+                "Coverage",
+                "GET",
+                "/Coverage?beneficiary={id}",
+                "Insurance coverage details",
+                ["insurance", "coverage", "eligibility"],
+            ),
+            (
+                "Communication",
+                "POST",
+                "/Communication",
+                "Send secure message",
+                ["messaging", "notification", "hipaa"],
+            ),
         ]
 
         for name, method, path, desc, tags in fhir_resources:
@@ -74,8 +116,11 @@ class FHIRConnector(BaseConnector):
         return [ep.to_dict() for ep in self.endpoints]
 
     async def invoke(
-        self, operation: str, parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None, timeout_ms: int = 30000,
+        self,
+        operation: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout_ms: int = 30000,
     ) -> APIResponse:
         """Execute a FHIR API call with HIPAA audit headers."""
         params = parameters or {}
@@ -94,16 +139,33 @@ class FHIRConnector(BaseConnector):
             "Observation": {
                 "resourceType": "Bundle",
                 "entry": [
-                    {"resource": {"code": {"text": "HbA1c"}, "valueQuantity": {"value": 6.2, "unit": "%"}}},
-                    {"resource": {"code": {"text": "LDL Cholesterol"}, "valueQuantity": {"value": 128, "unit": "mg/dL"}}},
-                    {"resource": {"code": {"text": "Blood Pressure"}, "valueString": "132/85 mmHg"}},
+                    {
+                        "resource": {
+                            "code": {"text": "HbA1c"},
+                            "valueQuantity": {"value": 6.2, "unit": "%"},
+                        }
+                    },
+                    {
+                        "resource": {
+                            "code": {"text": "LDL Cholesterol"},
+                            "valueQuantity": {"value": 128, "unit": "mg/dL"},
+                        }
+                    },
+                    {
+                        "resource": {
+                            "code": {"text": "Blood Pressure"},
+                            "valueString": "132/85 mmHg",
+                        }
+                    },
                 ],
             },
             "Coverage": {
                 "resourceType": "Coverage",
                 "status": "active",
                 "payor": [{"display": "Blue Cross Blue Shield"}],
-                "class": [{"type": {"text": "plan"}, "value": "PPO Gold"}],
+                "class": [
+                    {"type": {"text": "plan"}, "value": "PPO Gold"}
+                ],
                 "period": {"start": "2026-01-01", "end": "2026-12-31"},
             },
             "ServiceRequest": {
@@ -113,7 +175,7 @@ class FHIRConnector(BaseConnector):
                 "intent": "order",
                 "code": {"text": "Cardiology Consultation"},
                 "authoredOn": "2026-04-11",
-            },
+            },  # noqa: E501
             "Communication": {
                 "resourceType": "Communication",
                 "status": "completed",
@@ -131,7 +193,10 @@ class FHIRConnector(BaseConnector):
         return APIResponse(
             status_code=200,
             body=mock_responses.get(resource_type, {}),
-            headers={"X-FHIR-Audit": f"patient={patient_id}", "X-Request-Id": "fhir-req-001"},
+            headers={
+                "X-FHIR-Audit": f"patient={patient_id}",
+                "X-Request-Id": "fhir-req-001",
+            },
             latency_ms=85,
             connector_id=self.connector_id,
         )
@@ -149,12 +214,16 @@ class InsuranceConnector(BaseConnector):
     """
 
     def __init__(self, payer_url: str = "", **kwargs):
-        super().__init__(name="Insurance-Gateway", config={"payer_url": payer_url})
+        super().__init__(
+            name="Insurance-Gateway", config={"payer_url": payer_url}
+        )
         self.register_endpoint(APIEndpoint(
             name="Eligibility Check",
             method="POST",
             path="/eligibility/verify",
-            description="Real-time insurance eligibility verification (X12 270/271)",
+            description=(
+                "Real-time insurance eligibility verification (X12 270/271)"
+            ),
             tags=["insurance", "eligibility", "x12"],
             latency_p95_ms=200,
             cost_per_call=0.05,
@@ -174,8 +243,13 @@ class InsuranceConnector(BaseConnector):
     def discover(self) -> List[Dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
-    async def invoke(self, operation: str, parameters: Optional[Dict[str, Any]] = None,
-                     headers: Optional[Dict[str, str]] = None, timeout_ms: int = 30000) -> APIResponse:
+    async def invoke(
+        self,
+        operation: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout_ms: int = 30000,
+    ) -> APIResponse:
         if "auth" in operation.lower():
             return APIResponse(status_code=200, body={
                 "authorization_number": "PA-2026-04-78901",

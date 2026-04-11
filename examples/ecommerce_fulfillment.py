@@ -88,8 +88,13 @@ class InventoryConnector(BaseConnector):
     def discover(self) -> List[Dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
-    async def invoke(self, operation: str, parameters: Optional[Dict[str, Any]] = None,
-                     headers: Optional[Dict[str, str]] = None, timeout_ms: int = 30000) -> APIResponse:
+    async def invoke(
+        self,
+        operation: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout_ms: int = 30000,
+    ) -> APIResponse:
         params = parameters or {}
         warehouse_id = params.get("warehouse_id", "")
         sku = params.get("sku", "")
@@ -142,8 +147,13 @@ class PaymentConnector(BaseConnector):
     def discover(self) -> List[Dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
-    async def invoke(self, operation: str, parameters: Optional[Dict[str, Any]] = None,
-                     headers: Optional[Dict[str, str]] = None, timeout_ms: int = 30000) -> APIResponse:
+    async def invoke(
+        self,
+        operation: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout_ms: int = 30000,
+    ) -> APIResponse:
         params = parameters or {}
         amount = params.get("amount", 0)
         return APIResponse(status_code=200, body={
@@ -180,8 +190,13 @@ class ShippingConnector(BaseConnector):
     def discover(self) -> List[Dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
-    async def invoke(self, operation: str, parameters: Optional[Dict[str, Any]] = None,
-                     headers: Optional[Dict[str, str]] = None, timeout_ms: int = 30000) -> APIResponse:
+    async def invoke(
+        self,
+        operation: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout_ms: int = 30000,
+    ) -> APIResponse:
         params = parameters or {}
         carrier = "usps"
         for c in self._carriers:
@@ -217,7 +232,9 @@ class FulfillmentAgent(BaseAgent):
         super().__init__(name="FulfillmentAgent")
         self._reservations: List[Dict[str, Any]] = []
 
-    async def execute(self, context: OrchestrationContext, **kwargs: Any) -> Dict[str, Any]:
+    async def execute(
+        self, context: OrchestrationContext, **kwargs: Any
+    ) -> Dict[str, Any]:
         order: Order = kwargs["order"]
         inventory: InventoryConnector = kwargs["inventory"]
         payment: PaymentConnector = kwargs["payment"]
@@ -232,7 +249,11 @@ class FulfillmentAgent(BaseAgent):
         }
 
         # Phase 1: Check inventory across all warehouses (parallel)
-        self.emit_event(context, EventType.STEP_STARTED, message="Checking inventory across warehouses")
+        self.emit_event(
+            context,
+            EventType.STEP_STARTED,
+            message="Checking inventory across warehouses",
+        )
 
         check_tasks = [
             inventory.invoke("check", parameters={
@@ -253,13 +274,19 @@ class FulfillmentAgent(BaseAgent):
             ]
             result["status"] = "failed_inventory"
             result["error"] = f"Insufficient stock: {', '.join(unavailable)}"
-            self.emit_event(context, EventType.STEP_FAILED, message=result["error"])
+            self.emit_event(
+                context, EventType.STEP_FAILED, message=result["error"]
+            )
             return result
 
-        self.emit_event(context, EventType.STEP_COMPLETED, message="All inventory available")
+        self.emit_event(
+            context, EventType.STEP_COMPLETED, message="All inventory available"
+        )
 
         # Phase 2: Reserve inventory (parallel with rollback capability)
-        self.emit_event(context, EventType.STEP_STARTED, message="Reserving inventory")
+        self.emit_event(
+            context, EventType.STEP_STARTED, message="Reserving inventory"
+        )
 
         reserve_tasks = [
             inventory.invoke("reserve", parameters={
@@ -277,16 +304,30 @@ class FulfillmentAgent(BaseAgent):
                 result["inventory"].append(res.body)
             else:
                 # Rollback: release all previous reservations
-                self.emit_event(context, EventType.FALLBACK_TRIGGERED,
-                                message=f"Reservation failed for {order.items[i].name}, rolling back")
+                self.emit_event(
+                    context,
+                    EventType.FALLBACK_TRIGGERED,
+                    message=(
+                        f"Reservation failed for {order.items[i].name}, "
+                        f"rolling back"
+                    ),
+                )
                 result["status"] = "failed_reservation"
                 return result
 
-        self.emit_event(context, EventType.STEP_COMPLETED,
-                        message=f"Reserved {len(self._reservations)} items across {len(order.warehouses)} warehouses")
+        self.emit_event(
+            context,
+            EventType.STEP_COMPLETED,
+            message=(
+                f"Reserved {len(self._reservations)} items across "
+                f"{len(order.warehouses)} warehouses"
+            ),
+        )
 
         # Phase 3: Process payment with fraud check
-        self.emit_event(context, EventType.STEP_STARTED, message="Processing payment")
+        self.emit_event(
+            context, EventType.STEP_STARTED, message="Processing payment"
+        )
 
         payment_result = await payment.invoke("charge", parameters={
             "amount": order.total,
@@ -294,24 +335,40 @@ class FulfillmentAgent(BaseAgent):
             "order_id": order.order_id,
         })
 
-        if not payment_result.success or payment_result.body.get("fraud_decision") == "block":
+        if (not payment_result.success or
+                payment_result.body.get("fraud_decision") == "block"):
             result["status"] = "failed_payment"
-            self.emit_event(context, EventType.STEP_FAILED, message="Payment declined or fraud detected")
+            self.emit_event(
+                context,
+                EventType.STEP_FAILED,
+                message="Payment declined or fraud detected",
+            )
             return result
 
         result["payment"] = payment_result.body
-        self.emit_event(context, EventType.STEP_COMPLETED,
-                        message=f"Payment approved: {payment_result.body['transaction_id']}")
+        self.emit_event(
+            context,
+            EventType.STEP_COMPLETED,
+            message=f"Payment approved: {payment_result.body['transaction_id']}",
+        )
 
         # Phase 4: Book shipments per warehouse (parallel)
-        self.emit_event(context, EventType.STEP_STARTED, message="Booking shipments")
+        self.emit_event(
+            context, EventType.STEP_STARTED, message="Booking shipments"
+        )
 
         ship_tasks = []
         for warehouse_id in order.warehouses:
-            wh_items = [item for item in order.items if item.warehouse_id == warehouse_id]
+            wh_items = [
+                item for item in order.items
+                if item.warehouse_id == warehouse_id
+            ]
             ship_tasks.append(shipping.invoke("ship/usps", parameters={
                 "warehouse_id": warehouse_id,
-                "items": [{"sku": item.sku, "qty": item.quantity} for item in wh_items],
+                "items": [
+                    {"sku": item.sku, "qty": item.quantity}
+                    for item in wh_items
+                ],
                 "address": order.shipping_address,
                 "weight_lbs": sum(item.quantity * 2 for item in wh_items),
             }))
@@ -322,8 +379,11 @@ class FulfillmentAgent(BaseAgent):
                 result["shipments"].append(res.body)
 
         result["status"] = "fulfilled"
-        self.emit_event(context, EventType.STEP_COMPLETED,
-                        message=f"Booked {len(result['shipments'])} shipments")
+        self.emit_event(
+            context,
+            EventType.STEP_COMPLETED,
+            message=f"Booked {len(result['shipments'])} shipments",
+        )
 
         return result
 

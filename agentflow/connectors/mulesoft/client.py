@@ -14,11 +14,10 @@ Author: Venkata Pavan Kumar Gummadi
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
 from agentflow.connectors.base import APIEndpoint, APIResponse, BaseConnector
@@ -301,7 +300,7 @@ class MuleSoftConnector(BaseConnector):
             endpoints.append(ep)
         return endpoints
 
-    def _parse_operation(self, operation: str) -> tuple:
+    def _parse_operation(self, operation: str) -> Tuple[str, str]:
         """Parse 'GET /path' into (method, path)."""
         parts = operation.strip().split(" ", 1)
         if len(parts) == 2:

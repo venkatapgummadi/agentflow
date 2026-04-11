@@ -46,8 +46,13 @@ class KYCConnector(BaseConnector):
     def discover(self) -> List[Dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
-    async def invoke(self, operation: str, parameters: Optional[Dict[str, Any]] = None,
-                     headers: Optional[Dict[str, str]] = None, timeout_ms: int = 30000) -> APIResponse:
+    async def invoke(
+        self,
+        operation: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout_ms: int = 30000,
+    ) -> APIResponse:
         params = parameters or {}
         customer_id = params.get("customer_id", "")
         return APIResponse(status_code=200, body={
@@ -79,8 +84,13 @@ class SanctionsConnector(BaseConnector):
     def discover(self) -> List[Dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
-    async def invoke(self, operation: str, parameters: Optional[Dict[str, Any]] = None,
-                     headers: Optional[Dict[str, str]] = None, timeout_ms: int = 30000) -> APIResponse:
+    async def invoke(
+        self,
+        operation: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout_ms: int = 30000,
+    ) -> APIResponse:
         params = parameters or {}
         return APIResponse(status_code=200, body={
             "screened_name": params.get("name", ""),
@@ -101,9 +111,14 @@ class FXConnector(BaseConnector):
     def __init__(self):
         super().__init__(name="FX-Service")
         self._rates = {
-            ("USD", "EUR"): 0.92, ("USD", "GBP"): 0.79, ("USD", "JPY"): 149.50,
-            ("EUR", "USD"): 1.09, ("GBP", "USD"): 1.27, ("JPY", "USD"): 0.0067,
-            ("EUR", "GBP"): 0.86, ("GBP", "EUR"): 1.16,
+            ("USD", "EUR"): 0.92,
+            ("USD", "GBP"): 0.79,
+            ("USD", "JPY"): 149.50,
+            ("EUR", "USD"): 1.09,
+            ("GBP", "USD"): 1.27,
+            ("JPY", "USD"): 0.0067,
+            ("EUR", "GBP"): 0.86,
+            ("GBP", "EUR"): 1.16,
         }
         self.register_endpoint(APIEndpoint(
             name="FX Convert", method="POST", path="/fx/convert",
@@ -115,8 +130,13 @@ class FXConnector(BaseConnector):
     def discover(self) -> List[Dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
-    async def invoke(self, operation: str, parameters: Optional[Dict[str, Any]] = None,
-                     headers: Optional[Dict[str, str]] = None, timeout_ms: int = 30000) -> APIResponse:
+    async def invoke(
+        self,
+        operation: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout_ms: int = 30000,
+    ) -> APIResponse:
         params = parameters or {}
         from_curr = params.get("from_currency", "USD")
         to_curr = params.get("to_currency", "EUR")
@@ -143,17 +163,26 @@ class PaymentRailConnector(BaseConnector):
     def __init__(self):
         super().__init__(name="Payment-Rail")
         self.register_endpoint(APIEndpoint(
-            name="SWIFT Transfer", method="POST", path="/transfer/swift",
+            name="SWIFT Transfer",
+            method="POST",
+            path="/transfer/swift",
             description="Execute international SWIFT wire transfer",
             tags=["swift", "wire", "international", "payment"],
-            latency_p95_ms=2000, cost_per_call=15.00, rate_limit_rpm=50,
+            latency_p95_ms=2000,
+            cost_per_call=15.00,
+            rate_limit_rpm=50,
         ))
 
     def discover(self) -> List[Dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
-    async def invoke(self, operation: str, parameters: Optional[Dict[str, Any]] = None,
-                     headers: Optional[Dict[str, str]] = None, timeout_ms: int = 30000) -> APIResponse:
+    async def invoke(
+        self,
+        operation: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout_ms: int = 30000,
+    ) -> APIResponse:
         params = parameters or {}
         return APIResponse(status_code=200, body={
             "transfer_id": f"SWF-{uuid.uuid4().hex[:10].upper()}",
@@ -194,7 +223,11 @@ class ComplianceAgent(BaseAgent):
         sanctions_result = kwargs.get("sanctions_result", {})
         fraud_score = kwargs.get("fraud_score", 0.0)
 
-        self.emit_event(context, EventType.AGENT_MESSAGE, message="Evaluating regulatory compliance")
+        self.emit_event(
+            context,
+            EventType.AGENT_MESSAGE,
+            message="Evaluating regulatory compliance",
+        )
 
         findings = []
         actions_required = []
@@ -203,7 +236,10 @@ class ComplianceAgent(BaseAgent):
         # CTR check
         amount_usd = transaction.get("amount_usd", 0)
         if amount_usd >= self.CTR_THRESHOLD:
-            findings.append(f"Amount ${amount_usd:,.2f} exceeds CTR threshold (${self.CTR_THRESHOLD:,.2f})")
+            findings.append(
+                f"Amount ${amount_usd:,.2f} exceeds CTR threshold "
+                f"(${self.CTR_THRESHOLD:,.2f})"
+            )
             actions_required.append("FILE_CTR")
             risk_level = "medium"
 
@@ -239,8 +275,16 @@ class ComplianceAgent(BaseAgent):
 
         self.emit_event(
             context,
-            EventType.VALIDATION_PASSED if approved else EventType.VALIDATION_FAILED,
-            message=f"Compliance decision: {'APPROVED' if approved else 'BLOCKED'} (risk: {risk_level})",
+            (
+                EventType.VALIDATION_PASSED
+                if approved
+                else EventType.VALIDATION_FAILED
+            ),
+            message=(
+                f"Compliance decision: "
+                f"{'APPROVED' if approved else 'BLOCKED'} "
+                f"(risk: {risk_level})"
+            ),
             payload={"risk_level": risk_level, "actions": actions_required},
         )
 

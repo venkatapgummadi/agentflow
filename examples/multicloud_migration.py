@@ -54,8 +54,13 @@ class MuleSoftLegacyConnector(BaseConnector):
     def discover(self) -> List[Dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
-    async def invoke(self, operation: str, parameters: Optional[Dict[str, Any]] = None,
-                     headers: Optional[Dict[str, str]] = None, timeout_ms: int = 30000) -> APIResponse:
+    async def invoke(
+        self,
+        operation: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout_ms: int = 30000,
+    ) -> APIResponse:
         self.call_count += 1
         latency = random.gauss(120, 30)
 
@@ -66,13 +71,20 @@ class MuleSoftLegacyConnector(BaseConnector):
                 latency_ms=latency, connector_id=self.connector_id,
             )
 
-        return APIResponse(status_code=200, body={
-            "source": "mulesoft-cloudhub",
-            "customer_id": parameters.get("id", "123") if parameters else "123",
-            "name": "John Smith",
-            "tier": "enterprise",
-            "response_time_ms": round(latency, 1),
-        }, latency_ms=latency, connector_id=self.connector_id)
+        return APIResponse(
+            status_code=200,
+            body={
+                "source": "mulesoft-cloudhub",
+                "customer_id": (
+                    parameters.get("id", "123") if parameters else "123"
+                ),
+                "name": "John Smith",
+                "tier": "enterprise",
+                "response_time_ms": round(latency, 1),
+            },
+            latency_ms=latency,
+            connector_id=self.connector_id,
+        )
 
     async def health_check(self) -> bool:
         return True
@@ -100,8 +112,13 @@ class AWSAPIGatewayConnector(BaseConnector):
     def discover(self) -> List[Dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
-    async def invoke(self, operation: str, parameters: Optional[Dict[str, Any]] = None,
-                     headers: Optional[Dict[str, str]] = None, timeout_ms: int = 30000) -> APIResponse:
+    async def invoke(
+        self,
+        operation: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout_ms: int = 30000,
+    ) -> APIResponse:
         self.call_count += 1
         latency = random.gauss(self.latency_mean, 20)
 
@@ -112,13 +129,20 @@ class AWSAPIGatewayConnector(BaseConnector):
                 latency_ms=latency, connector_id=self.connector_id,
             )
 
-        return APIResponse(status_code=200, body={
-            "source": "aws-api-gateway",
-            "customer_id": parameters.get("id", "123") if parameters else "123",
-            "name": "John Smith",
-            "tier": "enterprise",
-            "response_time_ms": round(latency, 1),
-        }, latency_ms=latency, connector_id=self.connector_id)
+        return APIResponse(
+            status_code=200,
+            body={
+                "source": "aws-api-gateway",
+                "customer_id": (
+                    parameters.get("id", "123") if parameters else "123"
+                ),
+                "name": "John Smith",
+                "tier": "enterprise",
+                "response_time_ms": round(latency, 1),
+            },
+            latency_ms=latency,
+            connector_id=self.connector_id,
+        )
 
     async def health_check(self) -> bool:
         return True
