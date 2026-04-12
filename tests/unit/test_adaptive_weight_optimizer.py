@@ -11,8 +11,6 @@ from __future__ import annotations
 
 import time
 
-import pytest
-
 from agentflow.routing.adaptive_weight_optimizer import (
     AdaptiveWeightOptimizer,
     DimensionSLA,
@@ -106,7 +104,8 @@ class TestSLAViolations:
         assert RoutingDimension.LATENCY not in violations
 
     def test_health_violation(self) -> None:
-        sla = {RoutingDimension.HEALTH_STATUS: DimensionSLA(RoutingDimension.HEALTH_STATUS, 0.95, 0.05)}
+        dim_sla = DimensionSLA(RoutingDimension.HEALTH_STATUS, 0.95, 0.05)
+        sla = {RoutingDimension.HEALTH_STATUS: dim_sla}
         opt = AdaptiveWeightOptimizer(sla_config=sla, adjustment_interval_seconds=9999)
         opt.observe(_make_snapshot(health=0.70))
         violations = opt._detect_violations()
@@ -115,8 +114,11 @@ class TestSLAViolations:
 
 class TestWeightOptimization:
     def test_violated_dimension_weight_increases(self) -> None:
-        sla = {RoutingDimension.LATENCY: DimensionSLA(RoutingDimension.LATENCY, 50.0, 0.1)}
-        opt = AdaptiveWeightOptimizer(sla_config=sla, learning_rate=0.1, adjustment_interval_seconds=0)
+        dim_sla = DimensionSLA(RoutingDimension.LATENCY, 50.0, 0.1)
+        sla = {RoutingDimension.LATENCY: dim_sla}
+        opt = AdaptiveWeightOptimizer(
+            sla_config=sla, learning_rate=0.1, adjustment_interval_seconds=0
+        )
         initial = opt.get_current_weights()[RoutingDimension.LATENCY]
         for _ in range(5):
             opt.observe(_make_snapshot(latency=200.0))

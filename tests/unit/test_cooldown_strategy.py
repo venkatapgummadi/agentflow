@@ -11,11 +11,8 @@ from __future__ import annotations
 
 import time
 
-import pytest
-
 from agentflow.resilience.circuit_breaker import CircuitState
 from agentflow.resilience.cooldown_strategy import (
-    CooldownMetrics,
     ExponentialCooldownStrategy,
 )
 
