@@ -11,7 +11,6 @@ import time
 import pytest
 
 from agentflow.caching import (
-    CachedEntry,
     CacheKey,
     InMemoryCacheBackend,
     RedisStubCacheBackend,
