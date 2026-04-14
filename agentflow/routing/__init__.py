@@ -7,6 +7,18 @@ from agentflow.routing.adaptive_weight_optimizer import (
     RoutingDimension,
     WeightState,
 )
+from agentflow.routing.budget_router import (
+    BudgetExhaustedError,
+    BudgetMode,
+    BudgetRouter,
+    BudgetState,
+)
+from agentflow.routing.dynamic_router import (
+    DynamicRouter,
+    EndpointMetrics,
+    EndpointScore,
+    RoutingWeights,
+)
 
 __all__ = [
     "AdaptiveWeightOptimizer",
@@ -14,4 +26,12 @@ __all__ = [
     "EndpointPerformanceSnapshot",
     "RoutingDimension",
     "WeightState",
+    "DynamicRouter",
+    "EndpointMetrics",
+    "EndpointScore",
+    "RoutingWeights",
+    "BudgetRouter",
+    "BudgetMode",
+    "BudgetState",
+    "BudgetExhaustedError",
 ]
