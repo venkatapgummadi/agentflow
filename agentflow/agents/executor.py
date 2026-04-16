@@ -46,6 +46,8 @@ class ExecutorAgent(BaseAgent):
     async def execute(self, context: OrchestrationContext, **kwargs: Any) -> dict[str, Any]:
         """Execute the plan from context."""
         plan = kwargs.get("plan")
+        if not isinstance(plan, ExecutionPlan):
+            raise TypeError("ExecutorAgent.execute requires a 'plan' ExecutionPlan kwarg")
         connectors = kwargs.get("connectors", {})
         router = kwargs.get("router")
         return await self.execute_plan(plan, context, connectors, router)
@@ -168,9 +170,7 @@ class ExecutorAgent(BaseAgent):
         if not connector:
             # Try routing to find the best connector
             if router and connectors:
-                connector = self._route_to_connector(
-                    step, list(connectors.values()), router
-                )
+                connector = self._route_to_connector(step, list(connectors.values()), router)
 
         if not connector:
             step.mark_failed(f"No connector available for: {step.connector_id}")
@@ -222,9 +222,7 @@ class ExecutorAgent(BaseAgent):
 
         # Check circuit breaker
         if not circuit_breaker.allow_request():
-            raise RuntimeError(
-                f"Circuit open for connector {connector.connector_id}"
-            )
+            raise RuntimeError(f"Circuit open for connector {connector.connector_id}")
 
         retry_config = step.retry_policy or {
             "max_retries": 3,
@@ -259,9 +257,7 @@ class ExecutorAgent(BaseAgent):
                         step_id=step.step_id,
                         message=f"Retry {attempt + 1}/{max_retries}: {response.error_message}",
                     )
-                    backoff = self._retry_policy.calculate_backoff(
-                        attempt, retry_config
-                    )
+                    backoff = self._retry_policy.calculate_backoff(attempt, retry_config)
                     await asyncio.sleep(backoff)
                     continue
                 else:
@@ -273,9 +269,7 @@ class ExecutorAgent(BaseAgent):
             except Exception as e:
                 last_error = e
                 if attempt < max_retries:
-                    backoff = self._retry_policy.calculate_backoff(
-                        attempt, retry_config
-                    )
+                    backoff = self._retry_policy.calculate_backoff(attempt, retry_config)
                     await asyncio.sleep(backoff)
                 else:
                     circuit_breaker.record_failure()
@@ -286,9 +280,7 @@ class ExecutorAgent(BaseAgent):
     def _get_circuit_breaker(self, connector_id: str) -> CircuitBreaker:
         """Get or create a circuit breaker for a connector."""
         if connector_id not in self._circuit_breakers:
-            self._circuit_breakers[connector_id] = CircuitBreaker(
-                name=connector_id
-            )
+            self._circuit_breakers[connector_id] = CircuitBreaker(name=connector_id)
         return self._circuit_breakers[connector_id]
 
     def _route_to_connector(
@@ -303,9 +295,7 @@ class ExecutorAgent(BaseAgent):
             return connectors[0]
         return None
 
-    def _evaluate_condition(
-        self, condition: str, context: OrchestrationContext
-    ) -> bool:
+    def _evaluate_condition(self, condition: str, context: OrchestrationContext) -> bool:
         """Evaluate a step condition against the context."""
         # Simple expression evaluation
         # Production: use a safe expression parser

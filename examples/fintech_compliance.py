@@ -18,15 +18,12 @@ Author: Venkata Pavan Kumar Gummadi
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional
 import uuid
+from typing import Any
 
 from agentflow.agents.base_agent import BaseAgent
 from agentflow.connectors.base import APIEndpoint, APIResponse, BaseConnector
 from agentflow.core.context import EventType, OrchestrationContext
-from agentflow.resilience.circuit_breaker import CircuitBreaker
-from agentflow.routing.dynamic_router import DynamicRouter, RoutingWeights
-
 
 # ── FinTech Connectors ──────────────────────────────────────────────────
 
@@ -36,34 +33,45 @@ class KYCConnector(BaseConnector):
 
     def __init__(self):
         super().__init__(name="KYC-Service")
-        self.register_endpoint(APIEndpoint(
-            name="KYC Verify", method="POST", path="/kyc/verify",
-            description="Verify customer identity and KYC status",
-            tags=["kyc", "identity", "compliance"],
-            latency_p95_ms=400, cost_per_call=0.50, rate_limit_rpm=200,
-        ))
+        self.register_endpoint(
+            APIEndpoint(
+                name="KYC Verify",
+                method="POST",
+                path="/kyc/verify",
+                description="Verify customer identity and KYC status",
+                tags=["kyc", "identity", "compliance"],
+                latency_p95_ms=400,
+                cost_per_call=0.50,
+                rate_limit_rpm=200,
+            )
+        )
 
-    def discover(self) -> List[Dict[str, Any]]:
+    def discover(self) -> list[dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
     async def invoke(
         self,
         operation: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        parameters: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         timeout_ms: int = 30000,
     ) -> APIResponse:
         params = parameters or {}
         customer_id = params.get("customer_id", "")
-        return APIResponse(status_code=200, body={
-            "customer_id": customer_id,
-            "kyc_status": "verified",
-            "verification_level": "enhanced",
-            "risk_rating": "medium",
-            "last_verified": "2026-03-15",
-            "document_types": ["passport", "utility_bill"],
-            "pep_status": False,
-        }, connector_id=self.connector_id, latency_ms=280)
+        return APIResponse(
+            status_code=200,
+            body={
+                "customer_id": customer_id,
+                "kyc_status": "verified",
+                "verification_level": "enhanced",
+                "risk_rating": "medium",
+                "last_verified": "2026-03-15",
+                "document_types": ["passport", "utility_bill"],
+                "pep_status": False,
+            },
+            connector_id=self.connector_id,
+            latency_ms=280,
+        )
 
     async def health_check(self) -> bool:
         return True
@@ -74,32 +82,43 @@ class SanctionsConnector(BaseConnector):
 
     def __init__(self):
         super().__init__(name="Sanctions-Screening")
-        self.register_endpoint(APIEndpoint(
-            name="Sanctions Screen", method="POST", path="/sanctions/screen",
-            description="Screen against OFAC, EU, UN sanctions lists",
-            tags=["sanctions", "ofac", "compliance", "aml"],
-            latency_p95_ms=600, cost_per_call=0.25, rate_limit_rpm=300,
-        ))
+        self.register_endpoint(
+            APIEndpoint(
+                name="Sanctions Screen",
+                method="POST",
+                path="/sanctions/screen",
+                description="Screen against OFAC, EU, UN sanctions lists",
+                tags=["sanctions", "ofac", "compliance", "aml"],
+                latency_p95_ms=600,
+                cost_per_call=0.25,
+                rate_limit_rpm=300,
+            )
+        )
 
-    def discover(self) -> List[Dict[str, Any]]:
+    def discover(self) -> list[dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
     async def invoke(
         self,
         operation: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        parameters: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         timeout_ms: int = 30000,
     ) -> APIResponse:
         params = parameters or {}
-        return APIResponse(status_code=200, body={
-            "screened_name": params.get("name", ""),
-            "match_found": False,
-            "lists_checked": ["OFAC SDN", "EU Consolidated", "UN Security Council"],
-            "confidence": 0.0,
-            "screening_id": f"SCR-{uuid.uuid4().hex[:8]}",
-            "timestamp": "2026-04-11T10:00:00Z",
-        }, connector_id=self.connector_id, latency_ms=450)
+        return APIResponse(
+            status_code=200,
+            body={
+                "screened_name": params.get("name", ""),
+                "match_found": False,
+                "lists_checked": ["OFAC SDN", "EU Consolidated", "UN Security Council"],
+                "confidence": 0.0,
+                "screening_id": f"SCR-{uuid.uuid4().hex[:8]}",
+                "timestamp": "2026-04-11T10:00:00Z",
+            },
+            connector_id=self.connector_id,
+            latency_ms=450,
+        )
 
     async def health_check(self) -> bool:
         return True
@@ -120,21 +139,27 @@ class FXConnector(BaseConnector):
             ("EUR", "GBP"): 0.86,
             ("GBP", "EUR"): 1.16,
         }
-        self.register_endpoint(APIEndpoint(
-            name="FX Convert", method="POST", path="/fx/convert",
-            description="Real-time currency conversion",
-            tags=["fx", "currency", "conversion"],
-            latency_p95_ms=80, cost_per_call=0.01, rate_limit_rpm=1000,
-        ))
+        self.register_endpoint(
+            APIEndpoint(
+                name="FX Convert",
+                method="POST",
+                path="/fx/convert",
+                description="Real-time currency conversion",
+                tags=["fx", "currency", "conversion"],
+                latency_p95_ms=80,
+                cost_per_call=0.01,
+                rate_limit_rpm=1000,
+            )
+        )
 
-    def discover(self) -> List[Dict[str, Any]]:
+    def discover(self) -> list[dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
     async def invoke(
         self,
         operation: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        parameters: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         timeout_ms: int = 30000,
     ) -> APIResponse:
         params = parameters or {}
@@ -144,14 +169,19 @@ class FXConnector(BaseConnector):
         rate = self._rates.get((from_curr, to_curr), 1.0)
         converted = round(amount * rate, 2)
 
-        return APIResponse(status_code=200, body={
-            "from": {"currency": from_curr, "amount": amount},
-            "to": {"currency": to_curr, "amount": converted},
-            "rate": rate,
-            "rate_timestamp": "2026-04-11T10:00:01Z",
-            "quote_id": f"FXQ-{uuid.uuid4().hex[:8]}",
-            "valid_for_seconds": 30,
-        }, connector_id=self.connector_id, latency_ms=45)
+        return APIResponse(
+            status_code=200,
+            body={
+                "from": {"currency": from_curr, "amount": amount},
+                "to": {"currency": to_curr, "amount": converted},
+                "rate": rate,
+                "rate_timestamp": "2026-04-11T10:00:01Z",
+                "quote_id": f"FXQ-{uuid.uuid4().hex[:8]}",
+                "valid_for_seconds": 30,
+            },
+            connector_id=self.connector_id,
+            latency_ms=45,
+        )
 
     async def health_check(self) -> bool:
         return True
@@ -162,36 +192,42 @@ class PaymentRailConnector(BaseConnector):
 
     def __init__(self):
         super().__init__(name="Payment-Rail")
-        self.register_endpoint(APIEndpoint(
-            name="SWIFT Transfer",
-            method="POST",
-            path="/transfer/swift",
-            description="Execute international SWIFT wire transfer",
-            tags=["swift", "wire", "international", "payment"],
-            latency_p95_ms=2000,
-            cost_per_call=15.00,
-            rate_limit_rpm=50,
-        ))
+        self.register_endpoint(
+            APIEndpoint(
+                name="SWIFT Transfer",
+                method="POST",
+                path="/transfer/swift",
+                description="Execute international SWIFT wire transfer",
+                tags=["swift", "wire", "international", "payment"],
+                latency_p95_ms=2000,
+                cost_per_call=15.00,
+                rate_limit_rpm=50,
+            )
+        )
 
-    def discover(self) -> List[Dict[str, Any]]:
+    def discover(self) -> list[dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
     async def invoke(
         self,
         operation: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        parameters: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         timeout_ms: int = 30000,
     ) -> APIResponse:
-        params = parameters or {}
-        return APIResponse(status_code=200, body={
-            "transfer_id": f"SWF-{uuid.uuid4().hex[:10].upper()}",
-            "status": "processing",
-            "swift_reference": f"SWIFT{uuid.uuid4().hex[:12].upper()}",
-            "estimated_settlement": "2026-04-13",
-            "fees": {"sending_bank": 25.00, "correspondent": 15.00, "receiving_bank": 10.00},
-            "total_fees": 50.00,
-        }, connector_id=self.connector_id, latency_ms=1800)
+        return APIResponse(
+            status_code=200,
+            body={
+                "transfer_id": f"SWF-{uuid.uuid4().hex[:10].upper()}",
+                "status": "processing",
+                "swift_reference": f"SWIFT{uuid.uuid4().hex[:12].upper()}",
+                "estimated_settlement": "2026-04-13",
+                "fees": {"sending_bank": 25.00, "correspondent": 15.00, "receiving_bank": 10.00},
+                "total_fees": 50.00,
+            },
+            connector_id=self.connector_id,
+            latency_ms=1800,
+        )
 
     async def health_check(self) -> bool:
         return True
@@ -216,7 +252,7 @@ class ComplianceAgent(BaseAgent):
     def __init__(self):
         super().__init__(name="ComplianceAgent")
 
-    async def execute(self, context: OrchestrationContext, **kwargs: Any) -> Dict[str, Any]:
+    async def execute(self, context: OrchestrationContext, **kwargs: Any) -> dict[str, Any]:
         transaction = kwargs.get("transaction", {})
         kyc_sender = kwargs.get("kyc_sender", {})
         kyc_receiver = kwargs.get("kyc_receiver", {})
@@ -237,8 +273,7 @@ class ComplianceAgent(BaseAgent):
         amount_usd = transaction.get("amount_usd", 0)
         if amount_usd >= self.CTR_THRESHOLD:
             findings.append(
-                f"Amount ${amount_usd:,.2f} exceeds CTR threshold "
-                f"(${self.CTR_THRESHOLD:,.2f})"
+                f"Amount ${amount_usd:,.2f} exceeds CTR threshold (${self.CTR_THRESHOLD:,.2f})"
             )
             actions_required.append("FILE_CTR")
             risk_level = "medium"
@@ -275,15 +310,9 @@ class ComplianceAgent(BaseAgent):
 
         self.emit_event(
             context,
-            (
-                EventType.VALIDATION_PASSED
-                if approved
-                else EventType.VALIDATION_FAILED
-            ),
+            (EventType.VALIDATION_PASSED if approved else EventType.VALIDATION_FAILED),
             message=(
-                f"Compliance decision: "
-                f"{'APPROVED' if approved else 'BLOCKED'} "
-                f"(risk: {risk_level})"
+                f"Compliance decision: {'APPROVED' if approved else 'BLOCKED'} (risk: {risk_level})"
             ),
             payload={"risk_level": risk_level, "actions": actions_required},
         )
@@ -321,12 +350,12 @@ async def main():
     }
 
     print(f"\nTransaction: {transaction['sender_name']} -> {transaction['receiver_name']}")
-    amount = transaction['amount']
-    currency = transaction['currency']
-    target_currency = transaction['target_currency']
+    amount = transaction["amount"]
+    currency = transaction["currency"]
+    target_currency = transaction["target_currency"]
     print(f"Amount: ${amount:,.2f} {currency} -> {target_currency}")
-    sender_country = transaction['sender_country']
-    receiver_country = transaction['receiver_country']
+    sender_country = transaction["sender_country"]
+    receiver_country = transaction["receiver_country"]
     print(f"Route: {sender_country} -> {receiver_country}")
     print("-" * 70)
 
@@ -356,11 +385,11 @@ async def main():
             },
         ),
     )
-    sender_status = kyc_sender.body['kyc_status']
-    sender_risk = kyc_sender.body['risk_rating']
+    sender_status = kyc_sender.body["kyc_status"]
+    sender_risk = kyc_sender.body["risk_rating"]
     print(f"  Sender KYC: {sender_status} (risk: {sender_risk})")
-    receiver_status = kyc_receiver.body['kyc_status']
-    receiver_risk = kyc_receiver.body['risk_rating']
+    receiver_status = kyc_receiver.body["kyc_status"]
+    receiver_risk = kyc_receiver.body["risk_rating"]
     print(f"  Receiver KYC: {receiver_status} (risk: {receiver_risk})")
 
     # Phase 2: Sanctions screening (parallel)
@@ -383,7 +412,7 @@ async def main():
     )
     print(f"  Sender: {'CLEAR' if not sanc_sender.body['match_found'] else 'MATCH FOUND'}")
     print(f"  Receiver: {'CLEAR' if not sanc_receiver.body['match_found'] else 'MATCH FOUND'}")
-    lists_checked = ', '.join(sanc_sender.body['lists_checked'])
+    lists_checked = ", ".join(sanc_sender.body["lists_checked"])
     print(f"  Lists checked: {lists_checked}")
 
     # Phase 3: Compliance evaluation
@@ -397,9 +426,9 @@ async def main():
         sanctions_result=sanc_sender.body,
         fraud_score=0.12,
     )
-    decision = "APPROVED" if compliance['approved'] else "BLOCKED"
+    decision = "APPROVED" if compliance["approved"] else "BLOCKED"
     print(f"  Decision: {decision}")
-    risk_level = compliance['risk_level'].upper()
+    risk_level = compliance["risk_level"].upper()
     print(f"  Risk level: {risk_level}")
     for finding in compliance["findings"]:
         print(f"    - {finding}")
@@ -412,55 +441,63 @@ async def main():
 
     # Phase 4: Currency conversion
     print("\n[Phase 4] Currency Conversion...")
-    fx_result = await fx.invoke("convert", parameters={
-        "from_currency": transaction["currency"],
-        "to_currency": transaction["target_currency"],
-        "amount": transaction["amount"],
-    })
+    fx_result = await fx.invoke(
+        "convert",
+        parameters={
+            "from_currency": transaction["currency"],
+            "to_currency": transaction["target_currency"],
+            "amount": transaction["amount"],
+        },
+    )
     fx_body = fx_result.body
-    from_curr = fx_body['from']['currency']
-    to_curr = fx_body['to']['currency']
-    rate = fx_body['rate']
+    from_curr = fx_body["from"]["currency"]
+    to_curr = fx_body["to"]["currency"]
+    rate = fx_body["rate"]
     print(f"  Rate: 1 {from_curr} = {rate} {to_curr}")
-    amount_converted = fx_body['to']['amount']
+    amount_converted = fx_body["to"]["amount"]
     print(f"  Converted: {to_curr} {amount_converted:,.2f}")
-    valid_seconds = fx_body['valid_for_seconds']
+    valid_seconds = fx_body["valid_for_seconds"]
     print(f"  Quote valid for: {valid_seconds}s")
 
     # Phase 5: Execute SWIFT transfer
     print("\n[Phase 5] Executing SWIFT Transfer...")
-    transfer = await payment_rail.invoke("transfer/swift", parameters={
-        "sender": transaction["sender_id"],
-        "receiver": transaction["receiver_id"],
-        "amount": fx_body["to"]["amount"],
-        "currency": transaction["target_currency"],
-        "fx_quote_id": fx_body["quote_id"],
-        "compliance_id": compliance["compliance_id"],
-    })
+    transfer = await payment_rail.invoke(
+        "transfer/swift",
+        parameters={
+            "sender": transaction["sender_id"],
+            "receiver": transaction["receiver_id"],
+            "amount": fx_body["to"]["amount"],
+            "currency": transaction["target_currency"],
+            "fx_quote_id": fx_body["quote_id"],
+            "compliance_id": compliance["compliance_id"],
+        },
+    )
     t = transfer.body
     print(f"  Transfer ID: {t['transfer_id']}")
     print(f"  SWIFT Ref: {t['swift_reference']}")
     print(f"  Status: {t['status'].upper()}")
     print(f"  Settlement: {t['estimated_settlement']}")
-    sending_fee = t['fees']['sending_bank']
-    correspondent_fee = t['fees']['correspondent']
-    receiving_fee = t['fees']['receiving_bank']
-    total_fees = t['total_fees']
-    print(f"  Fees: ${total_fees:.2f} (sending: ${sending_fee}, "
-          f"correspondent: ${correspondent_fee}, receiving: ${receiving_fee})")
+    sending_fee = t["fees"]["sending_bank"]
+    correspondent_fee = t["fees"]["correspondent"]
+    receiving_fee = t["fees"]["receiving_bank"]
+    total_fees = t["total_fees"]
+    print(
+        f"  Fees: ${total_fees:.2f} (sending: ${sending_fee}, "
+        f"correspondent: ${correspondent_fee}, receiving: ${receiving_fee})"
+    )
 
     # Summary
     print(f"\n{'=' * 70}")
-    print(f"  TRANSACTION SUMMARY")
+    print("  TRANSACTION SUMMARY")
     print(f"{'=' * 70}")
-    sent_amount = transaction['amount']
+    sent_amount = transaction["amount"]
     print(f"  Sent: ${sent_amount:,.2f} USD")
-    received_currency = fx_body['to']['currency']
-    received_amount = fx_body['to']['amount']
+    received_currency = fx_body["to"]["currency"]
+    received_amount = fx_body["to"]["amount"]
     print(f"  Received: {received_currency} {received_amount:,.2f}")
     print(f"  Total fees: ${t['total_fees']:.2f}")
-    risk_level = compliance['risk_level'].upper()
-    compliance_id = compliance['compliance_id']
+    risk_level = compliance["risk_level"].upper()
+    compliance_id = compliance["compliance_id"]
     print(f"  Compliance: {risk_level} risk | {compliance_id}")
     print(f"  Audit events: {len(context.journal)}")
     print(f"  Duration: {context.duration:.3f}s")

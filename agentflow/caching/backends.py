@@ -98,11 +98,11 @@ class RedisStubCacheBackend(InMemoryCacheBackend):
     def _ns(self, key: str) -> str:
         return f"{self.namespace}:{key}"
 
-    def get(self, key: str) -> Any | None:  # type: ignore[override]
+    def get(self, key: str) -> Any | None:
         return super().get(self._ns(key))
 
-    def set(self, key: str, value: Any, ttl_seconds: float) -> None:  # type: ignore[override]
+    def set(self, key: str, value: Any, ttl_seconds: float) -> None:
         super().set(self._ns(key), value, ttl_seconds)
 
-    def delete(self, key: str) -> bool:  # type: ignore[override]
+    def delete(self, key: str) -> bool:
         return super().delete(self._ns(key))

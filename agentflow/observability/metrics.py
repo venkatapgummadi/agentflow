@@ -27,7 +27,17 @@ class _Histogram:
     """Bucketed histogram with a small, fixed default bucket layout."""
 
     buckets: tuple[float, ...] = (
-        5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000,
+        5,
+        10,
+        25,
+        50,
+        100,
+        250,
+        500,
+        1000,
+        2500,
+        5000,
+        10000,
     )
     counts: list[int] = field(default_factory=list)
     sum_value: float = 0.0
@@ -58,10 +68,7 @@ class _Histogram:
             "avg": round(avg, 4),
             "min": 0.0 if self.count == 0 else round(self.min_value, 4),
             "max": 0.0 if self.count == 0 else round(self.max_value, 4),
-            "buckets": [
-                {"le": str(b), "count": self.counts[i]}
-                for i, b in enumerate(self.buckets)
-            ]
+            "buckets": [{"le": str(b), "count": self.counts[i]} for i, b in enumerate(self.buckets)]
             + [{"le": "+Inf", "count": self.counts[-1]}],
         }
 
@@ -99,9 +106,7 @@ class MetricsCollector:
             bucket = self._counters.setdefault(name, {})
             bucket[key] = bucket.get(key, 0.0) + amount
 
-    def get_counter(
-        self, name: str, labels: dict[str, str] | None = None
-    ) -> float:
+    def get_counter(self, name: str, labels: dict[str, str] | None = None) -> float:
         with self._lock:
             return self._counters.get(name, {}).get(_label_key(labels), 0.0)
 
@@ -116,9 +121,7 @@ class MetricsCollector:
         with self._lock:
             self._gauges.setdefault(name, {})[_label_key(labels)] = float(value)
 
-    def get_gauge(
-        self, name: str, labels: dict[str, str] | None = None
-    ) -> float:
+    def get_gauge(self, name: str, labels: dict[str, str] | None = None) -> float:
         with self._lock:
             return self._gauges.get(name, {}).get(_label_key(labels), 0.0)
 
@@ -150,12 +153,8 @@ class MetricsCollector:
         """Read-consistent snapshot of all metrics."""
         with self._lock:
             return {
-                "counters": {
-                    name: dict(values) for name, values in self._counters.items()
-                },
-                "gauges": {
-                    name: dict(values) for name, values in self._gauges.items()
-                },
+                "counters": {name: dict(values) for name, values in self._counters.items()},
+                "gauges": {name: dict(values) for name, values in self._gauges.items()},
                 "histograms": {
                     name: {label: hist.snapshot() for label, hist in by_label.items()}
                     for name, by_label in self._histograms.items()

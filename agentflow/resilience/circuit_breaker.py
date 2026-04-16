@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 class CircuitState(Enum):
     """States of the circuit breaker."""
 
-    CLOSED = "closed"      # Normal operation, requests pass through
-    OPEN = "open"          # Failures exceeded threshold, requests blocked
+    CLOSED = "closed"  # Normal operation, requests pass through
+    OPEN = "open"  # Failures exceeded threshold, requests blocked
     HALF_OPEN = "half_open"  # Testing if the service has recovered
 
 
@@ -121,9 +121,7 @@ class CircuitBreaker:
             if self._success_count >= self.success_threshold:
                 self._transition_to(CircuitState.CLOSED)
                 self._consecutive_opens = max(0, self._consecutive_opens - 1)
-                logger.info(
-                    "Circuit '%s' closed after successful recovery", self.name
-                )
+                logger.info("Circuit '%s' closed after successful recovery", self.name)
 
     def record_failure(self) -> None:
         """Record a failed request."""
@@ -141,9 +139,7 @@ class CircuitBreaker:
             self._transition_to(CircuitState.OPEN)
             self._consecutive_opens += 1
             self._adapt_cooldown()
-            logger.warning(
-                "Circuit '%s' re-opened during half-open probe", self.name
-            )
+            logger.warning("Circuit '%s' re-opened during half-open probe", self.name)
         elif self._state == CircuitState.CLOSED:
             window_failure_count = len(self._window_failures)
             if window_failure_count >= self.failure_threshold:
@@ -197,9 +193,7 @@ class CircuitBreaker:
             self._failure_count = 0
             self._window_failures.clear()
 
-        logger.debug(
-            "Circuit '%s': %s → %s", self.name, old_state.value, new_state.value
-        )
+        logger.debug("Circuit '%s': %s → %s", self.name, old_state.value, new_state.value)
 
     def _cooldown_elapsed(self) -> bool:
         """Check if the cooldown period has elapsed."""
@@ -215,7 +209,7 @@ class CircuitBreaker:
         is persistently degraded.
         """
         self._current_cooldown = min(
-            self.cooldown_seconds * (2 ** self._consecutive_opens),
+            self.cooldown_seconds * (2**self._consecutive_opens),
             self.max_cooldown_seconds,
         )
         logger.debug(
@@ -227,6 +221,4 @@ class CircuitBreaker:
     def _prune_window(self) -> None:
         """Remove failures outside the sliding window."""
         cutoff = time.time() - self.window_seconds
-        self._window_failures = [
-            t for t in self._window_failures if t > cutoff
-        ]
+        self._window_failures = [t for t in self._window_failures if t > cutoff]

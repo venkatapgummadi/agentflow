@@ -80,9 +80,7 @@ class WeightState:
     weights: dict[RoutingDimension, float]
     last_updated: float = 0.0
     adjustment_count: int = 0
-    sla_violations: dict[RoutingDimension, int] = field(
-        default_factory=lambda: defaultdict(int)
-    )
+    sla_violations: dict[RoutingDimension, int] = field(default_factory=lambda: defaultdict(int))
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize weight state for monitoring and logging."""
@@ -90,9 +88,7 @@ class WeightState:
             "weights": {d.value: round(w, 4) for d, w in self.weights.items()},
             "last_updated": self.last_updated,
             "adjustment_count": self.adjustment_count,
-            "sla_violations": {
-                d.value: c for d, c in self.sla_violations.items()
-            },
+            "sla_violations": {d.value: c for d, c in self.sla_violations.items()},
         }
 
 
@@ -164,9 +160,7 @@ class AdaptiveWeightOptimizer:
         weights = initial_weights or self.DEFAULT_WEIGHTS.copy()
         self._state = WeightState(weights=weights, last_updated=time.time())
         self._ema_scores: dict[str, dict[RoutingDimension, float]] = defaultdict(dict)
-        self._velocity: dict[RoutingDimension, float] = {
-            dim: 0.0 for dim in RoutingDimension
-        }
+        self._velocity: dict[RoutingDimension, float] = {dim: 0.0 for dim in RoutingDimension}
         self._observation_buffer: list[EndpointPerformanceSnapshot] = []
 
         logger.info(
@@ -215,9 +209,7 @@ class AdaptiveWeightOptimizer:
 
     def reset(self) -> None:
         """Reset optimizer to initial default state."""
-        self._state = WeightState(
-            weights=self.DEFAULT_WEIGHTS.copy(), last_updated=time.time()
-        )
+        self._state = WeightState(weights=self.DEFAULT_WEIGHTS.copy(), last_updated=time.time())
         self._ema_scores.clear()
         self._velocity = {dim: 0.0 for dim in RoutingDimension}
         self._observation_buffer.clear()
@@ -293,9 +285,7 @@ class AdaptiveWeightOptimizer:
                 gradient[dim] = -self._learning_rate * 0.1
 
         for dim in RoutingDimension:
-            self._velocity[dim] = (
-                self._momentum * self._velocity[dim] + gradient.get(dim, 0.0)
-            )
+            self._velocity[dim] = self._momentum * self._velocity[dim] + gradient.get(dim, 0.0)
 
         new_weights: dict[RoutingDimension, float] = {}
         for dim in RoutingDimension:

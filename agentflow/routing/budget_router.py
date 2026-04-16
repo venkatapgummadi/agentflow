@@ -91,7 +91,7 @@ class BudgetRouter(DynamicRouter):
         mode: BudgetMode = BudgetMode.HARD_REJECT,
         downgrade_threshold: float = 0.8,
         weights: RoutingWeights | None = None,
-        custom_scorers: dict[str, Callable] | None = None,
+        custom_scorers: dict[str, Callable[..., float]] | None = None,
     ):
         super().__init__(weights=weights, custom_scorers=custom_scorers)
         if default_budget < 0:
@@ -105,9 +105,7 @@ class BudgetRouter(DynamicRouter):
 
     # ── Budget Lifecycle ──────────────────────────────────────────────
 
-    def start_context(
-        self, context_id: str, budget: float | None = None
-    ) -> BudgetState:
+    def start_context(self, context_id: str, budget: float | None = None) -> BudgetState:
         """Initialize (or reset) budget tracking for a context."""
         state = BudgetState(
             context_id=context_id,
@@ -134,14 +132,12 @@ class BudgetRouter(DynamicRouter):
             raise ValueError("amount must be >= 0")
         state.spent += amount
         state.call_count += 1
-        state.history.append(
-            {"endpoint_id": endpoint_id, "amount": amount, "spent": state.spent}
-        )
+        state.history.append({"endpoint_id": endpoint_id, "amount": amount, "spent": state.spent})
         return state
 
     # ── Routing Override ──────────────────────────────────────────────
 
-    def route(  # type: ignore[override]
+    def route(
         self,
         candidates: list[dict[str, Any]],
         required_capability: str = "",
@@ -160,10 +156,7 @@ class BudgetRouter(DynamicRouter):
             return super().route(candidates, required_capability, context)
 
         state = self.get_state(ctx_id)
-        viable = [
-            c for c in candidates
-            if float(c.get("cost_per_call", 0.0)) <= state.remaining
-        ]
+        viable = [c for c in candidates if float(c.get("cost_per_call", 0.0)) <= state.remaining]
 
         if not viable:
             state.rejected_count += 1
@@ -177,8 +170,7 @@ class BudgetRouter(DynamicRouter):
             )
             if self.mode == BudgetMode.HARD_REJECT:
                 raise BudgetExhaustedError(
-                    f"No candidate fits remaining budget {state.remaining:.4f} "
-                    f"for context {ctx_id}"
+                    f"No candidate fits remaining budget {state.remaining:.4f} for context {ctx_id}"
                 )
             # DOWNGRADE with no viable candidates: cheapest overall.
             return min(
@@ -187,16 +179,10 @@ class BudgetRouter(DynamicRouter):
                 default=None,
             )
 
-        if (
-            self.mode == BudgetMode.DOWNGRADE
-            and state.utilization >= self.downgrade_threshold
-        ):
-            cheapest = min(
-                viable, key=lambda c: float(c.get("cost_per_call", 0.0))
-            )
+        if self.mode == BudgetMode.DOWNGRADE and state.utilization >= self.downgrade_threshold:
+            cheapest = min(viable, key=lambda c: float(c.get("cost_per_call", 0.0)))
             logger.info(
-                "BudgetRouter DOWNGRADE active for %s (util=%.2f): "
-                "selected cheapest endpoint %s",
+                "BudgetRouter DOWNGRADE active for %s (util=%.2f): selected cheapest endpoint %s",
                 ctx_id,
                 state.utilization,
                 cheapest.get("endpoint_id", ""),

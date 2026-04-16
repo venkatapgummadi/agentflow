@@ -17,16 +17,13 @@ Author: Venkata Pavan Kumar Gummadi
 """
 
 import asyncio
-import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from agentflow import AgentOrchestrator, ExecutionPlan, PlanStep
+from agentflow import AgentOrchestrator
 from agentflow.agents.base_agent import BaseAgent
 from agentflow.connectors.base import APIEndpoint, APIResponse, BaseConnector
 from agentflow.core.context import EventType, OrchestrationContext
-from agentflow.core.plan import StepType
 from agentflow.routing.dynamic_router import DynamicRouter, RoutingWeights
-
 
 # ── Healthcare-Specific Connectors ──────────────────────────────────────
 
@@ -101,25 +98,27 @@ class FHIRConnector(BaseConnector):
         ]
 
         for name, method, path, desc, tags in fhir_resources:
-            self.register_endpoint(APIEndpoint(
-                name=f"FHIR {name}",
-                method=method,
-                path=path,
-                description=desc,
-                tags=tags,
-                latency_p95_ms=120,
-                cost_per_call=0.002,
-                rate_limit_rpm=500,
-            ))
+            self.register_endpoint(
+                APIEndpoint(
+                    name=f"FHIR {name}",
+                    method=method,
+                    path=path,
+                    description=desc,
+                    tags=tags,
+                    latency_p95_ms=120,
+                    cost_per_call=0.002,
+                    rate_limit_rpm=500,
+                )
+            )
 
-    def discover(self) -> List[Dict[str, Any]]:
+    def discover(self) -> list[dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
     async def invoke(
         self,
         operation: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        parameters: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         timeout_ms: int = 30000,
     ) -> APIResponse:
         """Execute a FHIR API call with HIPAA audit headers."""
@@ -163,9 +162,7 @@ class FHIRConnector(BaseConnector):
                 "resourceType": "Coverage",
                 "status": "active",
                 "payor": [{"display": "Blue Cross Blue Shield"}],
-                "class": [
-                    {"type": {"text": "plan"}, "value": "PPO Gold"}
-                ],
+                "class": [{"type": {"text": "plan"}, "value": "PPO Gold"}],
                 "period": {"start": "2026-01-01", "end": "2026-12-31"},
             },
             "ServiceRequest": {
@@ -214,57 +211,67 @@ class InsuranceConnector(BaseConnector):
     """
 
     def __init__(self, payer_url: str = "", **kwargs):
-        super().__init__(
-            name="Insurance-Gateway", config={"payer_url": payer_url}
+        super().__init__(name="Insurance-Gateway", config={"payer_url": payer_url})
+        self.register_endpoint(
+            APIEndpoint(
+                name="Eligibility Check",
+                method="POST",
+                path="/eligibility/verify",
+                description=("Real-time insurance eligibility verification (X12 270/271)"),
+                tags=["insurance", "eligibility", "x12"],
+                latency_p95_ms=200,
+                cost_per_call=0.05,
+                rate_limit_rpm=200,
+            )
         )
-        self.register_endpoint(APIEndpoint(
-            name="Eligibility Check",
-            method="POST",
-            path="/eligibility/verify",
-            description=(
-                "Real-time insurance eligibility verification (X12 270/271)"
-            ),
-            tags=["insurance", "eligibility", "x12"],
-            latency_p95_ms=200,
-            cost_per_call=0.05,
-            rate_limit_rpm=200,
-        ))
-        self.register_endpoint(APIEndpoint(
-            name="Prior Authorization",
-            method="POST",
-            path="/auth/prior",
-            description="Submit prior authorization request (X12 278)",
-            tags=["insurance", "authorization", "referral"],
-            latency_p95_ms=500,
-            cost_per_call=0.10,
-            rate_limit_rpm=100,
-        ))
+        self.register_endpoint(
+            APIEndpoint(
+                name="Prior Authorization",
+                method="POST",
+                path="/auth/prior",
+                description="Submit prior authorization request (X12 278)",
+                tags=["insurance", "authorization", "referral"],
+                latency_p95_ms=500,
+                cost_per_call=0.10,
+                rate_limit_rpm=100,
+            )
+        )
 
-    def discover(self) -> List[Dict[str, Any]]:
+    def discover(self) -> list[dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
     async def invoke(
         self,
         operation: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        parameters: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         timeout_ms: int = 30000,
     ) -> APIResponse:
         if "auth" in operation.lower():
-            return APIResponse(status_code=200, body={
-                "authorization_number": "PA-2026-04-78901",
-                "status": "approved",
-                "valid_through": "2026-07-11",
-                "approved_visits": 3,
-            }, connector_id=self.connector_id, latency_ms=320)
+            return APIResponse(
+                status_code=200,
+                body={
+                    "authorization_number": "PA-2026-04-78901",
+                    "status": "approved",
+                    "valid_through": "2026-07-11",
+                    "approved_visits": 3,
+                },
+                connector_id=self.connector_id,
+                latency_ms=320,
+            )
         else:
-            return APIResponse(status_code=200, body={
-                "eligible": True,
-                "plan": "PPO Gold",
-                "copay": 40,
-                "specialist_copay": 75,
-                "deductible_remaining": 1200,
-            }, connector_id=self.connector_id, latency_ms=150)
+            return APIResponse(
+                status_code=200,
+                body={
+                    "eligible": True,
+                    "plan": "PPO Gold",
+                    "copay": 40,
+                    "specialist_copay": 75,
+                    "deductible_remaining": 1200,
+                },
+                connector_id=self.connector_id,
+                latency_ms=150,
+            )
 
     async def health_check(self) -> bool:
         return True
@@ -295,21 +302,20 @@ class ClinicalDecisionAgent(BaseAgent):
             },
         }
 
-    async def execute(self, context: OrchestrationContext, **kwargs: Any) -> Dict[str, Any]:
+    async def execute(self, context: OrchestrationContext, **kwargs: Any) -> dict[str, Any]:
         lab_results = kwargs.get("lab_results", {})
         referral_type = kwargs.get("referral_type", "cardiology_referral")
 
         self.emit_event(
-            context, EventType.AGENT_MESSAGE,
+            context,
+            EventType.AGENT_MESSAGE,
             message=f"Evaluating clinical rules for {referral_type}",
         )
 
         decision = self._evaluate_rules(lab_results, referral_type)
 
         event_type = (
-            EventType.VALIDATION_PASSED
-            if decision["recommended"]
-            else EventType.VALIDATION_FAILED
+            EventType.VALIDATION_PASSED if decision["recommended"] else EventType.VALIDATION_FAILED
         )
         message = (
             "Clinical decision: RECOMMENDED"
@@ -320,7 +326,7 @@ class ClinicalDecisionAgent(BaseAgent):
 
         return decision
 
-    def _evaluate_rules(self, lab_results: Dict, referral_type: str) -> Dict[str, Any]:
+    def _evaluate_rules(self, lab_results: dict, referral_type: str) -> dict[str, Any]:
         rules = self.rules.get(referral_type, {})
         thresholds = rules.get("thresholds", {})
         findings = []
@@ -333,22 +339,19 @@ class ClinicalDecisionAgent(BaseAgent):
             value = resource.get("valueQuantity", {}).get("value")
 
             if "HbA1c" in code and value and value > thresholds.get("hba1c", 999):
-                hba1c_thresh = thresholds['hba1c']
+                hba1c_thresh = thresholds["hba1c"]
                 findings.append(f"Elevated HbA1c: {value}% (threshold: {hba1c_thresh}%)")
             elif "LDL" in code and value and value > thresholds.get("ldl", 999):
-                ldl_thresh = thresholds['ldl']
-                findings.append(
-                    f"Elevated LDL: {value} mg/dL (threshold: {ldl_thresh} mg/dL)"
-                )
+                ldl_thresh = thresholds["ldl"]
+                findings.append(f"Elevated LDL: {value} mg/dL (threshold: {ldl_thresh} mg/dL)")
             elif "Blood Pressure" in code:
                 bp_str = resource.get("valueString", "")
                 try:
                     systolic = int(bp_str.split("/")[0])
                     if systolic > thresholds.get("systolic_bp", 999):
-                        bp_thresh = thresholds['systolic_bp']
+                        bp_thresh = thresholds["systolic_bp"]
                         findings.append(
-                            f"Elevated systolic BP: {systolic} mmHg "
-                            f"(threshold: {bp_thresh})"
+                            f"Elevated systolic BP: {systolic} mmHg (threshold: {bp_thresh})"
                         )
                 except (ValueError, IndexError):
                     pass
@@ -387,12 +390,12 @@ async def run_patient_referral_workflow():
     # 2. Configure orchestrator with healthcare-appropriate routing
     # Prioritize reliability over cost for healthcare
     router = DynamicRouter(weights=RoutingWeights.high_availability())
-    orchestrator = AgentOrchestrator(connectors=[fhir, insurance], router=router)
+    AgentOrchestrator(connectors=[fhir, insurance], router=router)
 
     patient_id = "patient-12345"
     print(f"\nPatient ID: {patient_id}")
-    print(f"Referring Physician: Dr. Rodriguez")
-    print(f"Referral Type: Cardiology Consultation")
+    print("Referring Physician: Dr. Rodriguez")
+    print("Referral Type: Cardiology Consultation")
     print("-" * 70)
 
     # 3. Step-by-step orchestration with clinical decision support
@@ -405,13 +408,13 @@ async def run_patient_referral_workflow():
     labs = await fhir.invoke("Observation", parameters={"patient_id": patient_id})
     coverage = await fhir.invoke("Coverage", parameters={"patient_id": patient_id})
 
-    given_name = demographics.body['name'][0]['given'][0]
-    family_name = demographics.body['name'][0]['family']
+    given_name = demographics.body["name"][0]["given"][0]
+    family_name = demographics.body["name"][0]["family"]
     print(f"  Patient: {given_name} {family_name}")
     print(f"  DOB: {demographics.body['birthDate']}")
     print(f"  Lab results: {len(labs.body['entry'])} observations")
-    payor = coverage.body['payor'][0]['display']
-    plan = coverage.body['class'][0]['value']
+    payor = coverage.body["payor"][0]["display"]
+    plan = coverage.body["class"][0]["value"]
     print(f"  Insurance: {payor} ({plan})")
 
     # Phase 2: Clinical decision support
@@ -441,32 +444,41 @@ async def run_patient_referral_workflow():
     print(f"  Deductible remaining: ${eligibility.body['deductible_remaining']}")
 
     if eligibility.body["eligible"]:
-        auth = await insurance.invoke("auth/prior", parameters={
-            "patient_id": patient_id,
-            "referral_type": "cardiology",
-            "diagnosis_codes": ["I10", "E78.5"],
-        })
+        auth = await insurance.invoke(
+            "auth/prior",
+            parameters={
+                "patient_id": patient_id,
+                "referral_type": "cardiology",
+                "diagnosis_codes": ["I10", "E78.5"],
+            },
+        )
         print(f"  Authorization: {auth.body['status'].upper()}")
         print(f"  Auth number: {auth.body['authorization_number']}")
         print(f"  Approved visits: {auth.body['approved_visits']}")
 
     # Phase 4: Submit referral order
     print("\n[Phase 4] Submitting referral order...")
-    referral = await fhir.invoke("ServiceRequest", parameters={
-        "patient_id": patient_id,
-        "specialty": "cardiology",
-        "reason": decision["clinical_summary"],
-        "authorization": auth.body["authorization_number"],
-    })
+    referral = await fhir.invoke(
+        "ServiceRequest",
+        parameters={
+            "patient_id": patient_id,
+            "specialty": "cardiology",
+            "reason": decision["clinical_summary"],
+            "authorization": auth.body["authorization_number"],
+        },
+    )
     print(f"  Referral ID: {referral.body['id']}")
     print(f"  Status: {referral.body['status']}")
 
     # Phase 5: Notifications
     print("\n[Phase 5] Sending secure notifications...")
-    notification = await fhir.invoke("Communication", parameters={
-        "patient_id": patient_id,
-        "message": "Your cardiology referral has been approved.",
-    })
+    notification = await fhir.invoke(
+        "Communication",
+        parameters={
+            "patient_id": patient_id,
+            "message": "Your cardiology referral has been approved.",
+        },
+    )
     print(f"  Patient notification: {notification.body['status']}")
 
     # Audit trail

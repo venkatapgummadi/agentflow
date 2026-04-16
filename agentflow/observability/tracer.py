@@ -95,9 +95,7 @@ class Span:
     def set_attributes(self, attributes: dict[str, Any]) -> None:
         self.attributes.update(attributes)
 
-    def add_event(
-        self, name: str, attributes: dict[str, Any] | None = None
-    ) -> None:
+    def add_event(self, name: str, attributes: dict[str, Any] | None = None) -> None:
         self.events.append(SpanEvent(name=name, attributes=attributes or {}))
 
     def set_status(self, status: SpanStatus, message: str = "") -> None:
@@ -175,7 +173,7 @@ class Tracer:
 
     def current_span(self) -> Span | None:
         """Return the innermost active span on this thread."""
-        stack = getattr(self._local, "stack", None)
+        stack: list[Span] | None = getattr(self._local, "stack", None)
         if not stack:
             return None
         return stack[-1]

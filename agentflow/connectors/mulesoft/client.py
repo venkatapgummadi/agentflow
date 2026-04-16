@@ -40,15 +40,11 @@ class MuleSoftConfig:
     autodiscover: bool = True
     cache_ttl_seconds: int = 300  # noqa: F841
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.exchange_url:
-            self.exchange_url = urljoin(
-                self.anypoint_url, "/exchange/api/v2"
-            )
+            self.exchange_url = urljoin(self.anypoint_url, "/exchange/api/v2")
         if not self.runtime_manager_url:
-            self.runtime_manager_url = urljoin(
-                self.anypoint_url, "/cloudhub/api/v2"
-            )
+            self.runtime_manager_url = urljoin(self.anypoint_url, "/cloudhub/api/v2")
 
 
 @dataclass
@@ -259,8 +255,8 @@ class MuleSoftConnector(BaseConnector):
         if not limits:
             return 1.0
 
-        max_rpm = limits.get("max_rpm", 1000)
-        current_rpm = limits.get("current_rpm", 0)
+        max_rpm = float(limits.get("max_rpm", 1000))
+        current_rpm = float(limits.get("current_rpm", 0))
         return max(0.0, (max_rpm - current_rpm) / max_rpm)
 
     # ── Internal Methods ──────────────────────────────────────────────
@@ -312,9 +308,7 @@ class MuleSoftConnector(BaseConnector):
         base = self.mule_config.anypoint_url.rstrip("/")
         return f"{base}/{self.mule_config.environment}{path}"
 
-    def _build_headers(
-        self, extra_headers: dict[str, str] | None = None
-    ) -> dict[str, str]:
+    def _build_headers(self, extra_headers: dict[str, str] | None = None) -> dict[str, str]:
         """Build request headers with auth and policy compliance."""
         headers = {
             "Authorization": f"Bearer {self.mule_config.access_token}",

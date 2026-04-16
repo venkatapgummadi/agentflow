@@ -22,13 +22,10 @@ Author: Venkata Pavan Kumar Gummadi
 
 import asyncio
 import random
-import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from agentflow.connectors.base import APIEndpoint, APIResponse, BaseConnector
-from agentflow.resilience.circuit_breaker import CircuitBreaker
-from agentflow.routing.dynamic_router import DynamicRouter, EndpointMetrics, RoutingWeights
-
+from agentflow.routing.dynamic_router import DynamicRouter, RoutingWeights
 
 # ── Simulated Cloud Connectors ──────────────────────────────────────────
 
@@ -40,25 +37,27 @@ class MuleSoftLegacyConnector(BaseConnector):
         super().__init__(name="MuleSoft-CloudHub-Legacy")
         self.failure_rate = failure_rate
         self.call_count = 0
-        self.register_endpoint(APIEndpoint(
-            name="Customer API (MuleSoft)",
-            method="GET",
-            path="/api/v1/customers/{id}",
-            description="Legacy customer API on MuleSoft CloudHub",
-            tags=["customer", "legacy", "mulesoft"],
-            latency_p95_ms=150,
-            cost_per_call=0.005,
-            rate_limit_rpm=500,
-        ))
+        self.register_endpoint(
+            APIEndpoint(
+                name="Customer API (MuleSoft)",
+                method="GET",
+                path="/api/v1/customers/{id}",
+                description="Legacy customer API on MuleSoft CloudHub",
+                tags=["customer", "legacy", "mulesoft"],
+                latency_p95_ms=150,
+                cost_per_call=0.005,
+                rate_limit_rpm=500,
+            )
+        )
 
-    def discover(self) -> List[Dict[str, Any]]:
+    def discover(self) -> list[dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
     async def invoke(
         self,
         operation: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        parameters: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         timeout_ms: int = 30000,
     ) -> APIResponse:
         self.call_count += 1
@@ -66,18 +65,19 @@ class MuleSoftLegacyConnector(BaseConnector):
 
         if random.random() < self.failure_rate:
             return APIResponse(
-                status_code=503, is_error=True, retryable=True,
+                status_code=503,
+                is_error=True,
+                retryable=True,
                 error_message="CloudHub worker temporarily unavailable",
-                latency_ms=latency, connector_id=self.connector_id,
+                latency_ms=latency,
+                connector_id=self.connector_id,
             )
 
         return APIResponse(
             status_code=200,
             body={
                 "source": "mulesoft-cloudhub",
-                "customer_id": (
-                    parameters.get("id", "123") if parameters else "123"
-                ),
+                "customer_id": (parameters.get("id", "123") if parameters else "123"),
                 "name": "John Smith",
                 "tier": "enterprise",
                 "response_time_ms": round(latency, 1),
@@ -98,25 +98,27 @@ class AWSAPIGatewayConnector(BaseConnector):
         self.failure_rate = failure_rate
         self.latency_mean = latency_mean
         self.call_count = 0
-        self.register_endpoint(APIEndpoint(
-            name="Customer API (AWS)",
-            method="GET",
-            path="/api/v2/customers/{id}",
-            description="New customer API on AWS API Gateway + Lambda",
-            tags=["customer", "aws", "lambda"],
-            latency_p95_ms=100,
-            cost_per_call=0.002,
-            rate_limit_rpm=1000,
-        ))
+        self.register_endpoint(
+            APIEndpoint(
+                name="Customer API (AWS)",
+                method="GET",
+                path="/api/v2/customers/{id}",
+                description="New customer API on AWS API Gateway + Lambda",
+                tags=["customer", "aws", "lambda"],
+                latency_p95_ms=100,
+                cost_per_call=0.002,
+                rate_limit_rpm=1000,
+            )
+        )
 
-    def discover(self) -> List[Dict[str, Any]]:
+    def discover(self) -> list[dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
     async def invoke(
         self,
         operation: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        parameters: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         timeout_ms: int = 30000,
     ) -> APIResponse:
         self.call_count += 1
@@ -124,18 +126,19 @@ class AWSAPIGatewayConnector(BaseConnector):
 
         if random.random() < self.failure_rate:
             return APIResponse(
-                status_code=500, is_error=True, retryable=True,
+                status_code=500,
+                is_error=True,
+                retryable=True,
                 error_message="Lambda cold start timeout",
-                latency_ms=latency, connector_id=self.connector_id,
+                latency_ms=latency,
+                connector_id=self.connector_id,
             )
 
         return APIResponse(
             status_code=200,
             body={
                 "source": "aws-api-gateway",
-                "customer_id": (
-                    parameters.get("id", "123") if parameters else "123"
-                ),
+                "customer_id": (parameters.get("id", "123") if parameters else "123"),
                 "name": "John Smith",
                 "tier": "enterprise",
                 "response_time_ms": round(latency, 1),
@@ -192,20 +195,24 @@ class CanaryMigrationController:
         self.router = DynamicRouter(weights=RoutingWeights.balanced())
 
         # Per-stage metrics
-        self.stage_metrics: List[Dict[str, Any]] = []
+        self.stage_metrics: list[dict[str, Any]] = []
 
     async def run_migration(self, requests_per_stage: int = 50):
         """Run the complete canary migration."""
         print(f"\n{'=' * 70}")
-        print(f"  CANARY MIGRATION: MuleSoft CloudHub -> AWS API Gateway")
-        print(f"  Error threshold: {self.error_threshold:.0%} | "
-              f"Latency threshold: {self.latency_threshold_ms}ms")
+        print("  CANARY MIGRATION: MuleSoft CloudHub -> AWS API Gateway")
+        print(
+            f"  Error threshold: {self.error_threshold:.0%} | "
+            f"Latency threshold: {self.latency_threshold_ms}ms"
+        )
         print(f"{'=' * 70}")
 
         for stage_idx, stage in enumerate(self.STAGES):
             self.current_stage = stage_idx
-            print(f"\n--- Stage {stage_idx}: {stage['name']} "
-                  f"(Legacy: {stage['legacy_pct']}% / New: {stage['new_pct']}%) ---")
+            print(
+                f"\n--- Stage {stage_idx}: {stage['name']} "
+                f"(Legacy: {stage['legacy_pct']}% / New: {stage['new_pct']}%) ---"
+            )
 
             if stage["new_pct"] == 0:
                 print("  Establishing baseline metrics on legacy...")
@@ -223,13 +230,13 @@ class CanaryMigrationController:
                     print(f"  Rolling back to stage {max(0, stage_idx - 1)}")
                     break
                 else:
-                    print(f"  HEALTH GATE PASSED — proceeding to next stage")
+                    print("  HEALTH GATE PASSED — proceeding to next stage")
 
         self._print_summary()
 
     async def _run_stage(
-        self, stage: Dict, num_requests: int, baseline: bool = False
-    ) -> Dict[str, Any]:
+        self, stage: dict, num_requests: int, baseline: bool = False
+    ) -> dict[str, Any]:
         """Run a batch of requests at the current traffic split."""
         legacy_metrics = {"calls": 0, "errors": 0, "latency_sum": 0.0}
         new_metrics = {"calls": 0, "errors": 0, "latency_sum": 0.0}
@@ -265,22 +272,14 @@ class CanaryMigrationController:
             "legacy": {
                 "calls": legacy_calls,
                 "errors": legacy_metrics["errors"],
-                "error_rate": (
-                    legacy_metrics["errors"] / max(legacy_calls, 1)
-                ),
-                "avg_latency_ms": round(
-                    legacy_metrics["latency_sum"] / max(legacy_calls, 1), 1
-                ),
+                "error_rate": (legacy_metrics["errors"] / max(legacy_calls, 1)),
+                "avg_latency_ms": round(legacy_metrics["latency_sum"] / max(legacy_calls, 1), 1),
             },
             "new": {
                 "calls": new_calls,
                 "errors": new_metrics["errors"],
-                "error_rate": (
-                    new_metrics["errors"] / max(new_calls, 1)
-                ),
-                "avg_latency_ms": round(
-                    new_metrics["latency_sum"] / max(new_calls, 1), 1
-                ),
+                "error_rate": (new_metrics["errors"] / max(new_calls, 1)),
+                "avg_latency_ms": round(new_metrics["latency_sum"] / max(new_calls, 1), 1),
             },
         }
 
@@ -289,38 +288,36 @@ class CanaryMigrationController:
         new = metrics["new"]
         if new["calls"] == 0:
             return True
-        error_rate = new['error_rate']
+        error_rate = new["error_rate"]
         if error_rate > self.error_threshold:
-            print(
-                f"  FAILED: Error rate {error_rate:.1%} > "
-                f"threshold {self.error_threshold:.0%}"
-            )
+            print(f"  FAILED: Error rate {error_rate:.1%} > threshold {self.error_threshold:.0%}")
             return False
         latency = new["avg_latency_ms"]
         if latency > self.latency_threshold_ms:
-            print(
-                f"  FAILED: Latency {latency}ms > "
-                f"threshold {self.latency_threshold_ms}ms"
-            )
+            print(f"  FAILED: Latency {latency}ms > threshold {self.latency_threshold_ms}ms")
             return False
         return True
 
-    def _print_stage_metrics(self, metrics: Dict):
+    def _print_stage_metrics(self, metrics: dict):
         legacy = metrics["legacy"]
         new = metrics["new"]
 
         if legacy["calls"] > 0:
-            print(f"  Legacy:  {legacy['calls']} calls | "
-                  f"errors: {legacy['errors']} ({legacy['error_rate']:.1%}) | "
-                  f"avg latency: {legacy['avg_latency_ms']}ms")
+            print(
+                f"  Legacy:  {legacy['calls']} calls | "
+                f"errors: {legacy['errors']} ({legacy['error_rate']:.1%}) | "
+                f"avg latency: {legacy['avg_latency_ms']}ms"
+            )
         if new["calls"] > 0:
-            print(f"  New:     {new['calls']} calls | "
-                  f"errors: {new['errors']} ({new['error_rate']:.1%}) | "
-                  f"avg latency: {new['avg_latency_ms']}ms")
+            print(
+                f"  New:     {new['calls']} calls | "
+                f"errors: {new['errors']} ({new['error_rate']:.1%}) | "
+                f"avg latency: {new['avg_latency_ms']}ms"
+            )
 
     def _print_summary(self):
         print(f"\n{'=' * 70}")
-        print(f"  MIGRATION SUMMARY")
+        print("  MIGRATION SUMMARY")
         print(f"{'=' * 70}")
         print(f"  Stages completed: {len(self.stage_metrics)}/{len(self.STAGES)}")
         print(f"  Legacy total calls: {self.legacy.call_count}")
@@ -330,7 +327,7 @@ class CanaryMigrationController:
         if final.get("new", {}).get("calls", 0) > 0:
             final_stage = final["stage"]
             if "Cutover" in final_stage:
-                print(f"  Result: MIGRATION COMPLETE")
+                print("  Result: MIGRATION COMPLETE")
             else:
                 print(f"  Result: Stable at '{final_stage}'")
         print(f"{'=' * 70}")

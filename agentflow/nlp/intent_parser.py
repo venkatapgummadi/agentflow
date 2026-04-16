@@ -191,9 +191,7 @@ class IntentParser:
             result.extend(s.strip() for s in sub if s.strip())
         return result
 
-    def _extract_operations(
-        self, clause: str, index: int = 0
-    ) -> list[dict[str, Any]]:
+    def _extract_operations(self, clause: str, index: int = 0) -> list[dict[str, Any]]:
         """Extract operations from a single clause."""
         operations: list[dict[str, Any]] = []
         clause_lower = clause.lower()
@@ -204,30 +202,34 @@ class IntentParser:
                 if match:
                     verb = match.group(1) if match.lastindex else match.group(0)
                     target = self._extract_target(clause, match.end())
-                    operations.append({
-                        "name": f"{verb}_{index}",
-                        "type": op_type,
-                        "verb": verb.strip(),
-                        "target": target,
-                        "raw_clause": clause,
-                        "parameters": self._extract_inline_params(clause),
-                        "inputs_from": [],
-                        "required_tags": self._infer_tags(clause),
-                    })
+                    operations.append(
+                        {
+                            "name": f"{verb}_{index}",
+                            "type": op_type,
+                            "verb": verb.strip(),
+                            "target": target,
+                            "raw_clause": clause,
+                            "parameters": self._extract_inline_params(clause),
+                            "inputs_from": [],
+                            "required_tags": self._infer_tags(clause),
+                        }
+                    )
                     break  # One operation per pattern category per clause
 
         # Fallback: if no patterns matched, create a generic operation
         if not operations:
-            operations.append({
-                "name": f"generic_{index}",
-                "type": "api_call",
-                "verb": "execute",
-                "target": clause.strip(),
-                "raw_clause": clause,
-                "parameters": {},
-                "inputs_from": [],
-                "required_tags": self._infer_tags(clause),
-            })
+            operations.append(
+                {
+                    "name": f"generic_{index}",
+                    "type": "api_call",
+                    "verb": "execute",
+                    "target": clause.strip(),
+                    "raw_clause": clause,
+                    "parameters": {},
+                    "inputs_from": [],
+                    "required_tags": self._infer_tags(clause),
+                }
+            )
 
         return operations
 
@@ -265,11 +267,13 @@ class IntentParser:
             re.IGNORECASE,
         )
         for condition, action in if_then:
-            conditions.append({
-                "type": "if_then",
-                "condition": condition.strip(),
-                "action": action.strip(),
-            })
+            conditions.append(
+                {
+                    "type": "if_then",
+                    "condition": condition.strip(),
+                    "action": action.strip(),
+                }
+            )
 
         # Pattern: "X > N"
         comparisons = re.findall(
@@ -277,12 +281,14 @@ class IntentParser:
             intent,
         )
         for field, operator, value in comparisons:
-            conditions.append({
-                "type": "comparison",
-                "field": field,
-                "operator": operator,
-                "value": float(value),
-            })
+            conditions.append(
+                {
+                    "type": "comparison",
+                    "field": field,
+                    "operator": operator,
+                    "value": float(value),
+                }
+            )
 
         return conditions
 
@@ -321,9 +327,7 @@ class IntentParser:
 
         return tags
 
-    def _infer_dependencies(
-        self, operations: list[dict[str, Any]]
-    ) -> list[dict[str, Any]]:
+    def _infer_dependencies(self, operations: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Infer data dependencies between operations.
 
@@ -364,8 +368,8 @@ class IntentParser:
 
         op_score = min(len(operations) / 3.0, 1.0) * 0.5
         entity_score = min(len(entities) / 2.0, 1.0) * 0.3
-        specificity = sum(
-            1 for op in operations if op["type"] != "api_call"
-        ) / max(len(operations), 1) * 0.2
+        specificity = (
+            sum(1 for op in operations if op["type"] != "api_call") / max(len(operations), 1) * 0.2
+        )
 
         return min(op_score + entity_score + specificity, 1.0)

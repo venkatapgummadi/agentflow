@@ -145,9 +145,7 @@ class PlannerAgent(BaseAgent):
         - Cost per call (lower is better)
         - Rate limit headroom (higher is better)
         """
-        required_tags = set(
-            t.lower() for t in operation.get("required_tags", [])
-        )
+        required_tags = set(t.lower() for t in operation.get("required_tags", []))
 
         best_match = None
         best_score = -1.0
@@ -166,10 +164,7 @@ class PlannerAgent(BaseAgent):
             headroom_score = min(api.get("rate_limit_rpm", 1000), 1000) / 1000
 
             total_score = (
-                0.4 * tag_score
-                + 0.25 * latency_score
-                + 0.2 * cost_score
-                + 0.15 * headroom_score
+                0.4 * tag_score + 0.25 * latency_score + 0.2 * cost_score + 0.15 * headroom_score
             )
 
             if total_score > best_score:
@@ -221,20 +216,24 @@ class PlannerAgent(BaseAgent):
         words = intent.lower().split()
         for word in words:
             if word in keywords_to_ops:
-                operations.append({
-                    "name": word,
-                    "type": keywords_to_ops[word],
-                    "operation": word,
-                    "parameters": {},
-                })
+                operations.append(
+                    {
+                        "name": word,
+                        "type": keywords_to_ops[word],
+                        "operation": word,
+                        "parameters": {},
+                    }
+                )
 
         if not operations:
-            operations.append({
-                "name": "default_call",
-                "type": "api_call",
-                "operation": intent,
-                "parameters": {},
-            })
+            operations.append(
+                {
+                    "name": "default_call",
+                    "type": "api_call",
+                    "operation": intent,
+                    "parameters": {},
+                }
+            )
 
         return operations
 

@@ -87,7 +87,7 @@ class AgentOrchestrator:
         default_timeout_ms: int = 30000,
     ):
         self.connectors: dict[str, BaseConnector] = {}
-        for conn in (connectors or []):
+        for conn in connectors or []:
             self.connectors[conn.connector_id] = conn
 
         self.router = router or DynamicRouter()

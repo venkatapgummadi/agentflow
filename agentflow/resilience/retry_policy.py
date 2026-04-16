@@ -32,10 +32,10 @@ class BackoffStrategy(Enum):
 class ErrorClass(Enum):
     """Error classification for adaptive retry."""
 
-    TRANSIENT = "transient"          # Network timeout, 503
-    RATE_LIMITED = "rate_limited"    # 429 Too Many Requests
-    SERVER_ERROR = "server_error"    # 500, 502, 504
-    CLIENT_ERROR = "client_error"   # 400, 401, 403 (not retryable)
+    TRANSIENT = "transient"  # Network timeout, 503
+    RATE_LIMITED = "rate_limited"  # 429 Too Many Requests
+    SERVER_ERROR = "server_error"  # 500, 502, 504
+    CLIENT_ERROR = "client_error"  # 400, 401, 403 (not retryable)
     UNKNOWN = "unknown"
 
 
@@ -104,11 +104,9 @@ class RetryPolicy:
             wait += random.uniform(-jitter_amount, jitter_amount)
             wait = max(0.0, wait)
 
-        return wait
+        return float(wait)
 
-    def classify_error(
-        self, status_code: int = 0, error: Exception | None = None
-    ) -> ErrorClass:
+    def classify_error(self, status_code: int = 0, error: Exception | None = None) -> ErrorClass:
         """Classify an error for adaptive retry behavior."""
         if status_code == 429:
             return ErrorClass.RATE_LIMITED
@@ -135,7 +133,7 @@ class RetryPolicy:
     @staticmethod
     def _exponential(attempt: int, base: float, multiplier: float) -> float:
         """Exponential backoff: base * multiplier^attempt."""
-        return base * (multiplier ** attempt)
+        return base * (multiplier**attempt)
 
     @staticmethod
     def _linear(attempt: int, base: float) -> float:
@@ -168,6 +166,6 @@ class RetryPolicy:
             # Respect rate limits with longer waits
             return base * (multiplier ** (attempt + 1)) * 2
         elif error_class == ErrorClass.SERVER_ERROR:
-            return base * (multiplier ** attempt) * 1.5
+            return base * (multiplier**attempt) * 1.5
         else:
-            return base * (multiplier ** attempt)
+            return base * (multiplier**attempt)

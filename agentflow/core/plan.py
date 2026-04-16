@@ -155,9 +155,7 @@ class ExecutionPlan:
         have completed (or that has no dependencies) is ready to execute.
         """
         completed_ids = {
-            s.step_id
-            for s in self.steps
-            if s.status in (StepStatus.COMPLETED, StepStatus.SKIPPED)
+            s.step_id for s in self.steps if s.status in (StepStatus.COMPLETED, StepStatus.SKIPPED)
         }
         ready = []
         for step in self.steps:
@@ -180,9 +178,7 @@ class ExecutionPlan:
     def success_rate(self) -> float:
         if not self.steps:
             return 0.0
-        completed = sum(
-            1 for s in self.steps if s.status == StepStatus.COMPLETED
-        )
+        completed = sum(1 for s in self.steps if s.status == StepStatus.COMPLETED)
         return completed / len(self.steps)
 
     def topological_order(self) -> list[PlanStep]:
@@ -201,9 +197,9 @@ class ExecutionPlan:
 
         while queue:
             current = queue.pop(0)
-            step = self.get_step(current)
-            if step:
-                ordered.append(step)
+            current_step = self.get_step(current)
+            if current_step is not None:
+                ordered.append(current_step)
             for neighbor in adj.get(current, []):
                 in_degree[neighbor] -= 1
                 if in_degree[neighbor] == 0:

@@ -33,9 +33,7 @@ class TestIntentParser:
         assert "12345" in entities["numeric_id"]
 
     def test_condition_extraction(self):
-        result = self.parser.parse(
-            "If score > 700 then create application"
-        )
+        result = self.parser.parse("If score > 700 then create application")
         assert len(result["conditions"]) >= 1
 
     def test_empty_intent(self):
@@ -44,9 +42,7 @@ class TestIntentParser:
 
     def test_confidence_increases_with_detail(self):
         simple = self.parser.parse("Get data")
-        detailed = self.parser.parse(
-            "Fetch customer 12345 from CRM, enrich with credit score 700"
-        )
+        detailed = self.parser.parse("Fetch customer 12345 from CRM, enrich with credit score 700")
         assert detailed["confidence"] >= simple["confidence"]
 
     def test_transform_operation_detected(self):
@@ -56,9 +52,7 @@ class TestIntentParser:
         assert len(transform_ops) >= 1
 
     def test_aggregate_operation_detected(self):
-        result = self.parser.parse(
-            "Combine inventory data across all warehouses"
-        )
+        result = self.parser.parse("Combine inventory data across all warehouses")
         ops = result["operations"]
         agg_ops = [op for op in ops if op["type"] == "aggregate"]
         assert len(agg_ops) >= 1

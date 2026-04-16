@@ -90,7 +90,13 @@ class RESTConnector(BaseConnector):
                 continue
             for method, op in methods.items():
                 if method.lower() not in {
-                    "get", "post", "put", "patch", "delete", "head", "options",
+                    "get",
+                    "post",
+                    "put",
+                    "patch",
+                    "delete",
+                    "head",
+                    "options",
                 }:
                     continue
                 if not isinstance(op, dict):
@@ -103,9 +109,7 @@ class RESTConnector(BaseConnector):
                     description=op.get("summary") or op.get("description") or "",
                     parameters=op.get("parameters", []) or [],
                     tags=[t.lower() for t in (op.get("tags") or [])],
-                    latency_p95_ms=float(
-                        op.get("x-latency-p95-ms", 100.0)
-                    ),
+                    latency_p95_ms=float(op.get("x-latency-p95-ms", 100.0)),
                     cost_per_call=float(op.get("x-cost-per-call", 0.0)),
                     rate_limit_rpm=int(op.get("x-rate-limit-rpm", 1000)),
                 )
@@ -172,9 +176,7 @@ class RESTConnector(BaseConnector):
             }
         )
         try:
-            raw = await self._http_call(
-                method, url, body, merged_headers, timeout_ms
-            )
+            raw = await self._http_call(method, url, body, merged_headers, timeout_ms)
             latency_ms = (time.time() - start) * 1000.0
             status = int(raw.get("status_code", 200))
             return APIResponse(

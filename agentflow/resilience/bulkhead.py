@@ -85,9 +85,7 @@ class Bulkhead:
         return self._waiting
 
     @asynccontextmanager
-    async def acquire(
-        self, timeout: float | None = None
-    ) -> AsyncIterator[None]:
+    async def acquire(self, timeout: float | None = None) -> AsyncIterator[None]:
         """
         Acquire a slot for the duration of the `async with` block.
 
@@ -107,22 +105,18 @@ class Bulkhead:
         if self._waiting >= self.max_queued and self._in_flight >= self.max_concurrent:
             self._total_rejected += 1
             raise BulkheadFullError(
-                f"Bulkhead '{self.name}' queue full: "
-                f"{self._waiting}/{self.max_queued} waiters"
+                f"Bulkhead '{self.name}' queue full: {self._waiting}/{self.max_queued} waiters"
             )
 
         self._waiting += 1
         start = time.time()
         try:
             try:
-                await asyncio.wait_for(
-                    self._semaphore.acquire(), timeout=wait_timeout
-                )
+                await asyncio.wait_for(self._semaphore.acquire(), timeout=wait_timeout)
             except asyncio.TimeoutError as exc:
                 self._total_rejected += 1
                 raise BulkheadFullError(
-                    f"Bulkhead '{self.name}' acquire timed out after "
-                    f"{wait_timeout:.2f}s"
+                    f"Bulkhead '{self.name}' acquire timed out after {wait_timeout:.2f}s"
                 ) from exc
         finally:
             self._waiting -= 1
@@ -138,11 +132,7 @@ class Bulkhead:
 
     def get_metrics(self) -> dict[str, Any]:
         """Snapshot of bulkhead utilization metrics."""
-        avg_wait = (
-            self._total_wait_time / self._total_acquired
-            if self._total_acquired
-            else 0.0
-        )
+        avg_wait = self._total_wait_time / self._total_acquired if self._total_acquired else 0.0
         return {
             "name": self.name,
             "max_concurrent": self.max_concurrent,
@@ -154,8 +144,7 @@ class Bulkhead:
             "total_rejected": self._total_rejected,
             "avg_wait_seconds": round(avg_wait, 4),
             "rejection_rate": round(
-                self._total_rejected
-                / max(self._total_acquired + self._total_rejected, 1),
+                self._total_rejected / max(self._total_acquired + self._total_rejected, 1),
                 4,
             ),
         }
@@ -202,13 +191,9 @@ class BulkheadRegistry:
         bh = Bulkhead(
             name=key,
             max_concurrent=max_concurrent,
-            max_queued=(
-                max_queued if max_queued is not None else self.default_max_queued
-            ),
+            max_queued=(max_queued if max_queued is not None else self.default_max_queued),
             acquire_timeout=(
-                acquire_timeout
-                if acquire_timeout is not None
-                else self.default_acquire_timeout
+                acquire_timeout if acquire_timeout is not None else self.default_acquire_timeout
             ),
         )
         self._bulkheads[key] = bh

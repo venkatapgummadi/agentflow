@@ -102,8 +102,7 @@ class ExponentialCooldownStrategy:
         self._circuit_states: dict[str, CircuitState] = {}
 
         logger.info(
-            "ExponentialCooldownStrategy initialized | base=%dms | "
-            "max=%dms | threshold=%d",
+            "ExponentialCooldownStrategy initialized | base=%dms | max=%dms | threshold=%d",
             base_cooldown_ms,
             max_cooldown_ms,
             failure_threshold,
@@ -143,8 +142,7 @@ class ExponentialCooldownStrategy:
             self._circuit_states[endpoint_id] = CircuitState.OPEN
             if old_state != CircuitState.OPEN:
                 logger.warning(
-                    "Circuit OPENED for %s | failures=%d | "
-                    "cooldown=%.0fms | decay=%.2f",
+                    "Circuit OPENED for %s | failures=%d | cooldown=%.0fms | decay=%.2f",
                     endpoint_id,
                     metrics.consecutive_failures,
                     cooldown,
@@ -165,14 +163,11 @@ class ExponentialCooldownStrategy:
         metrics.last_recovery_time = time.time()
         metrics.consecutive_failures = 0
         metrics.current_cooldown_ms = 0.0
-        metrics.recovery_success_rate = (
-            0.9 * metrics.recovery_success_rate + 0.1
-        )
+        metrics.recovery_success_rate = 0.9 * metrics.recovery_success_rate + 0.1
 
         self._circuit_states[endpoint_id] = CircuitState.CLOSED
         logger.info(
-            "Circuit CLOSED for %s | recovery succeeded | "
-            "decay=%.2f | success_rate=%.2f",
+            "Circuit CLOSED for %s | recovery succeeded | decay=%.2f | success_rate=%.2f",
             endpoint_id,
             metrics.learned_decay_factor,
             metrics.recovery_success_rate,
@@ -186,16 +181,13 @@ class ExponentialCooldownStrategy:
             self.MAX_DECAY_FACTOR,
             metrics.learned_decay_factor * (1.0 + self.FAILURE_LEARNING_RATE),
         )
-        metrics.recovery_success_rate = (
-            0.9 * metrics.recovery_success_rate
-        )
+        metrics.recovery_success_rate = 0.9 * metrics.recovery_success_rate
 
         cooldown = self.record_failure(endpoint_id)
         self._circuit_states[endpoint_id] = CircuitState.OPEN
 
         logger.info(
-            "Recovery FAILED for %s | back to OPEN | "
-            "decay=%.2f | cooldown=%.0fms",
+            "Recovery FAILED for %s | back to OPEN | decay=%.2f | cooldown=%.0fms",
             endpoint_id,
             metrics.learned_decay_factor,
             cooldown,

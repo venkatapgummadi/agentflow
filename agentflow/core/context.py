@@ -107,9 +107,7 @@ class OrchestrationContext:
                 self._state[namespace] = {}
             self._state[namespace][key] = value
 
-    async def get(
-        self, namespace: str, key: str, default: Any = None
-    ) -> Any:
+    async def get(self, namespace: str, key: str, default: Any = None) -> Any:
         """Get a value from a namespaced scope."""
         async with self._lock:
             return self._state.get(namespace, {}).get(key, default)

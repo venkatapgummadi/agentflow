@@ -18,19 +18,13 @@ Author: Venkata Pavan Kumar Gummadi
 """
 
 import asyncio
-from dataclasses import dataclass, field
-import json
-from typing import Any, Dict, List, Optional
 import uuid
+from dataclasses import dataclass, field
+from typing import Any
 
-from agentflow import AgentOrchestrator, ExecutionPlan, PlanStep
 from agentflow.agents.base_agent import BaseAgent
 from agentflow.connectors.base import APIEndpoint, APIResponse, BaseConnector
 from agentflow.core.context import EventType, OrchestrationContext
-from agentflow.core.plan import StepType
-from agentflow.resilience.circuit_breaker import CircuitBreaker
-from agentflow.routing.dynamic_router import DynamicRouter, RoutingWeights
-
 
 # ── Data Models ─────────────────────────────────────────────────────────
 
@@ -48,15 +42,15 @@ class OrderItem:
 class Order:
     order_id: str = field(default_factory=lambda: f"ORD-{uuid.uuid4().hex[:8].upper()}")
     customer_id: str = ""
-    items: List[OrderItem] = field(default_factory=list)
-    shipping_address: Dict[str, str] = field(default_factory=dict)
+    items: list[OrderItem] = field(default_factory=list)
+    shipping_address: dict[str, str] = field(default_factory=dict)
 
     @property
     def total(self) -> float:
         return sum(item.price * item.quantity for item in self.items)
 
     @property
-    def warehouses(self) -> List[str]:
+    def warehouses(self) -> list[str]:
         return list(set(item.warehouse_id for item in self.items if item.warehouse_id))
 
 
@@ -75,24 +69,26 @@ class InventoryConnector(BaseConnector):
         }
 
         for wh_id in self._stock:
-            self.register_endpoint(APIEndpoint(
-                name=f"Inventory {wh_id}",
-                method="GET",
-                path=f"/inventory/{wh_id}/check",
-                description=f"Check stock at warehouse {wh_id}",
-                tags=["inventory", "warehouse", wh_id.lower()],
-                latency_p95_ms=50,
-                rate_limit_rpm=1000,
-            ))
+            self.register_endpoint(
+                APIEndpoint(
+                    name=f"Inventory {wh_id}",
+                    method="GET",
+                    path=f"/inventory/{wh_id}/check",
+                    description=f"Check stock at warehouse {wh_id}",
+                    tags=["inventory", "warehouse", wh_id.lower()],
+                    latency_p95_ms=50,
+                    rate_limit_rpm=1000,
+                )
+            )
 
-    def discover(self) -> List[Dict[str, Any]]:
+    def discover(self) -> list[dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
     async def invoke(
         self,
         operation: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        parameters: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         timeout_ms: int = 30000,
     ) -> APIResponse:
         params = parameters or {}
@@ -105,28 +101,44 @@ class InventoryConnector(BaseConnector):
             current = stock.get(sku, 0)
             if current >= quantity:
                 stock[sku] = current - quantity
-                return APIResponse(status_code=200, body={
-                    "reserved": True,
-                    "reservation_id": f"RES-{uuid.uuid4().hex[:6]}",
-                    "warehouse": warehouse_id,
-                    "sku": sku,
-                    "quantity": quantity,
-                    "remaining_stock": stock[sku],
-                }, connector_id=self.connector_id, latency_ms=35)
+                return APIResponse(
+                    status_code=200,
+                    body={
+                        "reserved": True,
+                        "reservation_id": f"RES-{uuid.uuid4().hex[:6]}",
+                        "warehouse": warehouse_id,
+                        "sku": sku,
+                        "quantity": quantity,
+                        "remaining_stock": stock[sku],
+                    },
+                    connector_id=self.connector_id,
+                    latency_ms=35,
+                )
             else:
-                return APIResponse(status_code=409, body={
-                    "reserved": False,
-                    "reason": f"Insufficient stock: {current} available, {quantity} requested",
-                }, is_error=True, connector_id=self.connector_id, latency_ms=20)
+                return APIResponse(
+                    status_code=409,
+                    body={
+                        "reserved": False,
+                        "reason": f"Insufficient stock: {current} available, {quantity} requested",
+                    },
+                    is_error=True,
+                    connector_id=self.connector_id,
+                    latency_ms=20,
+                )
         else:
             stock = self._stock.get(warehouse_id, {})
             available = stock.get(sku, 0)
-            return APIResponse(status_code=200, body={
-                "warehouse": warehouse_id,
-                "sku": sku,
-                "available": available,
-                "sufficient": available >= quantity,
-            }, connector_id=self.connector_id, latency_ms=25)
+            return APIResponse(
+                status_code=200,
+                body={
+                    "warehouse": warehouse_id,
+                    "sku": sku,
+                    "available": available,
+                    "sufficient": available >= quantity,
+                },
+                connector_id=self.connector_id,
+                latency_ms=25,
+            )
 
     async def health_check(self) -> bool:
         return True
@@ -137,33 +149,44 @@ class PaymentConnector(BaseConnector):
 
     def __init__(self):
         super().__init__(name="Payment-Gateway")
-        self.register_endpoint(APIEndpoint(
-            name="Process Payment", method="POST", path="/payments/charge",
-            description="Process credit card payment with fraud scoring",
-            tags=["payment", "charge", "fraud"],
-            latency_p95_ms=800, cost_per_call=0.30, rate_limit_rpm=200,
-        ))
+        self.register_endpoint(
+            APIEndpoint(
+                name="Process Payment",
+                method="POST",
+                path="/payments/charge",
+                description="Process credit card payment with fraud scoring",
+                tags=["payment", "charge", "fraud"],
+                latency_p95_ms=800,
+                cost_per_call=0.30,
+                rate_limit_rpm=200,
+            )
+        )
 
-    def discover(self) -> List[Dict[str, Any]]:
+    def discover(self) -> list[dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
     async def invoke(
         self,
         operation: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        parameters: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         timeout_ms: int = 30000,
     ) -> APIResponse:
         params = parameters or {}
         amount = params.get("amount", 0)
-        return APIResponse(status_code=200, body={
-            "transaction_id": f"TXN-{uuid.uuid4().hex[:8].upper()}",
-            "status": "approved",
-            "amount": amount,
-            "fraud_score": 0.12,
-            "fraud_decision": "allow",
-            "processor": "stripe",
-        }, connector_id=self.connector_id, latency_ms=650)
+        return APIResponse(
+            status_code=200,
+            body={
+                "transaction_id": f"TXN-{uuid.uuid4().hex[:8].upper()}",
+                "status": "approved",
+                "amount": amount,
+                "fraud_score": 0.12,
+                "fraud_decision": "allow",
+                "processor": "stripe",
+            },
+            connector_id=self.connector_id,
+            latency_ms=650,
+        )
 
     async def health_check(self) -> bool:
         return True
@@ -180,21 +203,27 @@ class ShippingConnector(BaseConnector):
             "usps": {"name": "USPS Priority", "days": 3, "base_rate": 7.99},
         }
         for carrier_id, info in self._carriers.items():
-            self.register_endpoint(APIEndpoint(
-                name=f"Ship via {info['name']}", method="POST", path=f"/ship/{carrier_id}",
-                description=f"Book shipment with {info['name']}",
-                tags=["shipping", carrier_id, "fulfillment"],
-                latency_p95_ms=300, cost_per_call=0.05, rate_limit_rpm=500,
-            ))
+            self.register_endpoint(
+                APIEndpoint(
+                    name=f"Ship via {info['name']}",
+                    method="POST",
+                    path=f"/ship/{carrier_id}",
+                    description=f"Book shipment with {info['name']}",
+                    tags=["shipping", carrier_id, "fulfillment"],
+                    latency_p95_ms=300,
+                    cost_per_call=0.05,
+                    rate_limit_rpm=500,
+                )
+            )
 
-    def discover(self) -> List[Dict[str, Any]]:
+    def discover(self) -> list[dict[str, Any]]:
         return [ep.to_dict() for ep in self.endpoints]
 
     async def invoke(
         self,
         operation: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        parameters: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         timeout_ms: int = 30000,
     ) -> APIResponse:
         params = parameters or {}
@@ -204,14 +233,19 @@ class ShippingConnector(BaseConnector):
                 carrier = c
                 break
         info = self._carriers[carrier]
-        return APIResponse(status_code=200, body={
-            "shipment_id": f"SHIP-{uuid.uuid4().hex[:6].upper()}",
-            "carrier": info["name"],
-            "tracking_number": f"1Z{uuid.uuid4().hex[:16].upper()}",
-            "estimated_days": info["days"],
-            "rate": info["base_rate"] + (params.get("weight_lbs", 2) * 0.50),
-            "warehouse_origin": params.get("warehouse_id", ""),
-        }, connector_id=self.connector_id, latency_ms=220)
+        return APIResponse(
+            status_code=200,
+            body={
+                "shipment_id": f"SHIP-{uuid.uuid4().hex[:6].upper()}",
+                "carrier": info["name"],
+                "tracking_number": f"1Z{uuid.uuid4().hex[:16].upper()}",
+                "estimated_days": info["days"],
+                "rate": info["base_rate"] + (params.get("weight_lbs", 2) * 0.50),
+                "warehouse_origin": params.get("warehouse_id", ""),
+            },
+            connector_id=self.connector_id,
+            latency_ms=220,
+        )
 
     async def health_check(self) -> bool:
         return True
@@ -230,11 +264,9 @@ class FulfillmentAgent(BaseAgent):
 
     def __init__(self):
         super().__init__(name="FulfillmentAgent")
-        self._reservations: List[Dict[str, Any]] = []
+        self._reservations: list[dict[str, Any]] = []
 
-    async def execute(
-        self, context: OrchestrationContext, **kwargs: Any
-    ) -> Dict[str, Any]:
+    async def execute(self, context: OrchestrationContext, **kwargs: Any) -> dict[str, Any]:
         order: Order = kwargs["order"]
         inventory: InventoryConnector = kwargs["inventory"]
         payment: PaymentConnector = kwargs["payment"]
@@ -256,11 +288,14 @@ class FulfillmentAgent(BaseAgent):
         )
 
         check_tasks = [
-            inventory.invoke("check", parameters={
-                "warehouse_id": item.warehouse_id,
-                "sku": item.sku,
-                "quantity": item.quantity,
-            })
+            inventory.invoke(
+                "check",
+                parameters={
+                    "warehouse_id": item.warehouse_id,
+                    "sku": item.sku,
+                    "quantity": item.quantity,
+                },
+            )
             for item in order.items
         ]
         check_results = await asyncio.gather(*check_tasks)
@@ -274,26 +309,23 @@ class FulfillmentAgent(BaseAgent):
             ]
             result["status"] = "failed_inventory"
             result["error"] = f"Insufficient stock: {', '.join(unavailable)}"
-            self.emit_event(
-                context, EventType.STEP_FAILED, message=result["error"]
-            )
+            self.emit_event(context, EventType.STEP_FAILED, message=result["error"])
             return result
 
-        self.emit_event(
-            context, EventType.STEP_COMPLETED, message="All inventory available"
-        )
+        self.emit_event(context, EventType.STEP_COMPLETED, message="All inventory available")
 
         # Phase 2: Reserve inventory (parallel with rollback capability)
-        self.emit_event(
-            context, EventType.STEP_STARTED, message="Reserving inventory"
-        )
+        self.emit_event(context, EventType.STEP_STARTED, message="Reserving inventory")
 
         reserve_tasks = [
-            inventory.invoke("reserve", parameters={
-                "warehouse_id": item.warehouse_id,
-                "sku": item.sku,
-                "quantity": item.quantity,
-            })
+            inventory.invoke(
+                "reserve",
+                parameters={
+                    "warehouse_id": item.warehouse_id,
+                    "sku": item.sku,
+                    "quantity": item.quantity,
+                },
+            )
             for item in order.items
         ]
         reserve_results = await asyncio.gather(*reserve_tasks)
@@ -307,10 +339,7 @@ class FulfillmentAgent(BaseAgent):
                 self.emit_event(
                     context,
                     EventType.FALLBACK_TRIGGERED,
-                    message=(
-                        f"Reservation failed for {order.items[i].name}, "
-                        f"rolling back"
-                    ),
+                    message=(f"Reservation failed for {order.items[i].name}, rolling back"),
                 )
                 result["status"] = "failed_reservation"
                 return result
@@ -325,18 +354,18 @@ class FulfillmentAgent(BaseAgent):
         )
 
         # Phase 3: Process payment with fraud check
-        self.emit_event(
-            context, EventType.STEP_STARTED, message="Processing payment"
+        self.emit_event(context, EventType.STEP_STARTED, message="Processing payment")
+
+        payment_result = await payment.invoke(
+            "charge",
+            parameters={
+                "amount": order.total,
+                "customer_id": order.customer_id,
+                "order_id": order.order_id,
+            },
         )
 
-        payment_result = await payment.invoke("charge", parameters={
-            "amount": order.total,
-            "customer_id": order.customer_id,
-            "order_id": order.order_id,
-        })
-
-        if (not payment_result.success or
-                payment_result.body.get("fraud_decision") == "block"):
+        if not payment_result.success or payment_result.body.get("fraud_decision") == "block":
             result["status"] = "failed_payment"
             self.emit_event(
                 context,
@@ -353,25 +382,22 @@ class FulfillmentAgent(BaseAgent):
         )
 
         # Phase 4: Book shipments per warehouse (parallel)
-        self.emit_event(
-            context, EventType.STEP_STARTED, message="Booking shipments"
-        )
+        self.emit_event(context, EventType.STEP_STARTED, message="Booking shipments")
 
         ship_tasks = []
         for warehouse_id in order.warehouses:
-            wh_items = [
-                item for item in order.items
-                if item.warehouse_id == warehouse_id
-            ]
-            ship_tasks.append(shipping.invoke("ship/usps", parameters={
-                "warehouse_id": warehouse_id,
-                "items": [
-                    {"sku": item.sku, "qty": item.quantity}
-                    for item in wh_items
-                ],
-                "address": order.shipping_address,
-                "weight_lbs": sum(item.quantity * 2 for item in wh_items),
-            }))
+            wh_items = [item for item in order.items if item.warehouse_id == warehouse_id]
+            ship_tasks.append(
+                shipping.invoke(
+                    "ship/usps",
+                    parameters={
+                        "warehouse_id": warehouse_id,
+                        "items": [{"sku": item.sku, "qty": item.quantity} for item in wh_items],
+                        "address": order.shipping_address,
+                        "weight_lbs": sum(item.quantity * 2 for item in wh_items),
+                    },
+                )
+            )
 
         ship_results = await asyncio.gather(*ship_tasks)
         for res in ship_results:
@@ -402,14 +428,14 @@ async def main():
         items=[
             OrderItem(
                 sku="SKU-LAPTOP-001",
-                name="Pro Laptop 16\"",
+                name='Pro Laptop 16"',
                 quantity=1,
                 price=1299.99,
                 warehouse_id="WH-EAST",
             ),
             OrderItem(
                 sku="SKU-MONITOR-003",
-                name="4K Monitor 27\"",
+                name='4K Monitor 27"',
                 quantity=2,
                 price=449.99,
                 warehouse_id="WH-WEST",
@@ -460,16 +486,16 @@ async def main():
 
     if result.get("payment"):
         p = result["payment"]
-        print(f"\n  Payment:")
+        print("\n  Payment:")
         print(f"    Transaction: {p['transaction_id']}")
         print(f"    Amount: ${p['amount']:,.2f}")
         print(f"    Fraud score: {p['fraud_score']} ({p['fraud_decision']})")
 
-    print(f"\n  Inventory Reservations:")
+    print("\n  Inventory Reservations:")
     for res in result.get("inventory", []):
         print(f"    {res['sku']} @ {res['warehouse']} — Reserved (ID: {res['reservation_id']})")
 
-    print(f"\n  Shipments:")
+    print("\n  Shipments:")
     for ship in result.get("shipments", []):
         print(f"    {ship['carrier']} from {ship['warehouse_origin']}")
         print(f"      Tracking: {ship['tracking_number']}")

@@ -190,9 +190,7 @@ class GraphQLConnector(BaseConnector):
         """Health check via a trivial introspection query."""
         try:
             doc = "{ __typename }"
-            resp = await self._gql_call(
-                self.endpoint_url, doc, {}, self.headers, 5000
-            )
+            resp = await self._gql_call(self.endpoint_url, doc, {}, self.headers, 5000)
             return not resp.get("errors") and resp.get("data") is not None
         except Exception:  # noqa: BLE001
             return False
@@ -225,9 +223,7 @@ class GraphQLConnector(BaseConnector):
         return out
 
     @staticmethod
-    def _build_document(
-        op_type: str, op_name: str, variables: dict[str, Any]
-    ) -> str:
+    def _build_document(op_type: str, op_name: str, variables: dict[str, Any]) -> str:
         """
         Build a minimal GraphQL document.
 
@@ -240,10 +236,7 @@ class GraphQLConnector(BaseConnector):
         if variables:
             var_decls = ", ".join(f"${k}: JSON" for k in variables)
             args = ", ".join(f"{k}: ${k}" for k in variables)
-            return (
-                f"{op_type} {op_name}Op({var_decls}) {{ "
-                f"{op_name}({args}) {{ {selection} }} }}"
-            )
+            return f"{op_type} {op_name}Op({var_decls}) {{ {op_name}({args}) {{ {selection} }} }}"
         return f"{op_type} {op_name}Op {{ {op_name} {{ {selection} }} }}"
 
 

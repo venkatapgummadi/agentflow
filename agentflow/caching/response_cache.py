@@ -204,7 +204,8 @@ class ResponseCache:
 
         if 200 <= upstream_status < 300 and new_response is not None:
             self.store(key, new_response, ttl_seconds=ttl_seconds)
-            return self.backend.get(key.to_str())  # type: ignore[return-value]
+            stored = self.backend.get(key.to_str())
+            return stored if isinstance(stored, CachedEntry) else None
 
         # Anything else: drop the entry.
         self.backend.delete(key.to_str())

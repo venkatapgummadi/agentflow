@@ -8,11 +8,10 @@ Author: Venkata Pavan Kumar Gummadi
 """
 
 import asyncio
-from typing import Any, Dict
+from typing import Any
 
 from agentflow.agents.base_agent import BaseAgent
 from agentflow.core.context import EventType, OrchestrationContext
-from agentflow.core.plan import ExecutionPlan, PlanStep, StepType
 
 
 class CreditScoringAgent(BaseAgent):
@@ -27,7 +26,7 @@ class CreditScoringAgent(BaseAgent):
         super().__init__(name="CreditScoringAgent")
         self.scoring_model = scoring_model
 
-    async def execute(self, context: OrchestrationContext, **kwargs: Any) -> Dict[str, Any]:
+    async def execute(self, context: OrchestrationContext, **kwargs: Any) -> dict[str, Any]:
         customer_data = kwargs.get("customer_data", {})
 
         self.emit_event(
@@ -49,7 +48,7 @@ class CreditScoringAgent(BaseAgent):
 
         return score
 
-    def _calculate_score(self, customer_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _calculate_score(self, customer_data: dict[str, Any]) -> dict[str, Any]:
         """
         Calculate credit score based on customer financial data.
 
@@ -79,8 +78,7 @@ class CreditScoringAgent(BaseAgent):
                 "history_bonus": round(history_bonus, 1),
             },
             "recommendation": (
-                "approve" if score >= 700 else "review"
-                if score >= 600 else "decline"
+                "approve" if score >= 700 else "review" if score >= 600 else "decline"
             ),
         }
 
@@ -96,7 +94,7 @@ class FraudDetectionAgent(BaseAgent):
         super().__init__(name="FraudDetectionAgent")
         self.risk_threshold = risk_threshold
 
-    async def execute(self, context: OrchestrationContext, **kwargs: Any) -> Dict[str, Any]:
+    async def execute(self, context: OrchestrationContext, **kwargs: Any) -> dict[str, Any]:
         transaction_data = kwargs.get("transaction_data", {})
 
         risk_score = self._assess_risk(transaction_data)
@@ -116,7 +114,7 @@ class FraudDetectionAgent(BaseAgent):
             "action": "block" if flagged else "allow",
         }
 
-    def _assess_risk(self, data: Dict[str, Any]) -> float:
+    def _assess_risk(self, data: dict[str, Any]) -> float:
         """Simplified risk scoring — production uses ML model."""
         score = 0.0
         if data.get("amount", 0) > 10000:

@@ -7,9 +7,7 @@ for building fault-tolerant API orchestrations.
 Author: Venkata Pavan Kumar Gummadi
 """
 
-import asyncio
-
-from agentflow.resilience.circuit_breaker import CircuitBreaker, CircuitState
+from agentflow.resilience.circuit_breaker import CircuitBreaker
 from agentflow.resilience.retry_policy import (
     BackoffStrategy,
     ErrorClass,
@@ -41,7 +39,7 @@ def demo_circuit_breaker():
     # Simulate failures
     for i in range(3):
         cb.record_failure()
-        print(f"After failure {i+1}: {cb.state.value}")
+        print(f"After failure {i + 1}: {cb.state.value}")
 
     print(f"Allow request? {cb.allow_request()}")
     print(f"Metrics: {cb.get_metrics()}")

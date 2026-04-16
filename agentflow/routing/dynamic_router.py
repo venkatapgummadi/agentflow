@@ -156,7 +156,7 @@ class DynamicRouter:
     def __init__(
         self,
         weights: RoutingWeights | None = None,
-        custom_scorers: dict[str, Callable] | None = None,
+        custom_scorers: dict[str, Callable[..., float]] | None = None,
     ):
         self.weights = weights or RoutingWeights()
         self.custom_scorers = custom_scorers or {}
@@ -238,10 +238,12 @@ class DynamicRouter:
         ep_id = candidate.get("endpoint_id", "")
         metrics = self._metrics.get(ep_id, EndpointMetrics())
 
-        # Latency score: exponential decay from P95 latency
+        # Latency score: exponential decay from P95 latency.
+        # Uses a 200ms scale so typical API latencies (10–500ms) actually
+        # discriminate; /1000 left everything under ~200ms scoring ~0.8.
         p95_latency = candidate.get("latency_p95_ms", 100)
         actual_latency = metrics.avg_latency_ms or p95_latency
-        latency_score = math.exp(-actual_latency / 1000)
+        latency_score = math.exp(-actual_latency / 200)
 
         # Cost score: inverse of cost per call
         cost = candidate.get("cost_per_call", 0.0)

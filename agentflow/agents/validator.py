@@ -88,6 +88,8 @@ class ValidatorAgent(BaseAgent):
 
     async def execute(self, context: OrchestrationContext, **kwargs: Any) -> dict[str, Any]:
         plan = kwargs.get("plan")
+        if not isinstance(plan, ExecutionPlan):
+            raise TypeError("ValidatorAgent.execute requires a 'plan' ExecutionPlan kwarg")
         outputs = kwargs.get("outputs", {})
         return await self.validate(plan, context, outputs)
 
@@ -123,9 +125,7 @@ class ValidatorAgent(BaseAgent):
             results.append(result)
 
         # Summarize
-        passed = all(
-            r.passed for r in results if r.severity == "error"
-        )
+        passed = all(r.passed for r in results if r.severity == "error")
         warnings = [r for r in results if not r.passed and r.severity == "warning"]
         errors = [r for r in results if not r.passed and r.severity == "error"]
 
@@ -135,7 +135,7 @@ class ValidatorAgent(BaseAgent):
             context,
             event_type,
             message=f"Validation {'passed' if passed else 'failed'}: "
-                    f"{len(errors)} errors, {len(warnings)} warnings",
+            f"{len(errors)} errors, {len(warnings)} warnings",
         )
 
         return {
@@ -148,9 +148,7 @@ class ValidatorAgent(BaseAgent):
 
     def _check_completeness(self, plan: ExecutionPlan) -> ValidationResult:
         """Verify all steps reached a terminal state."""
-        incomplete = [
-            s for s in plan.steps if not s.is_terminal
-        ]
+        incomplete = [s for s in plan.steps if not s.is_terminal]
         return ValidationResult(
             rule_name="completeness",
             passed=len(incomplete) == 0,
@@ -164,24 +162,13 @@ class ValidatorAgent(BaseAgent):
 
     def _check_no_failures(self, plan: ExecutionPlan) -> ValidationResult:
         """Verify no steps failed."""
-        failed = [
-            s for s in plan.steps if s.status == StepStatus.FAILED
-        ]
+        failed = [s for s in plan.steps if s.status == StepStatus.FAILED]
         return ValidationResult(
             rule_name="no_failures",
             passed=len(failed) == 0,
-            message=(
-                "No step failures"
-                if not failed
-                else f"{len(failed)} steps failed"
-            ),
+            message=("No step failures" if not failed else f"{len(failed)} steps failed"),
             severity="error",
-            details={
-                "failed_steps": [
-                    {"step_id": s.step_id, "error": s.error}
-                    for s in failed
-                ]
-            },
+            details={"failed_steps": [{"step_id": s.step_id, "error": s.error} for s in failed]},
         )
 
     def _check_data_presence(

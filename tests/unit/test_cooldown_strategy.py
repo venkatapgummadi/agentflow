@@ -70,8 +70,10 @@ class TestCooldownComputation:
 
     def test_cooldown_capped(self) -> None:
         s = ExponentialCooldownStrategy(
-            base_cooldown_ms=1000, max_cooldown_ms=5000,
-            jitter_factor=0.0, failure_threshold=999,
+            base_cooldown_ms=1000,
+            max_cooldown_ms=5000,
+            jitter_factor=0.0,
+            failure_threshold=999,
         )
         for _ in range(20):
             cd = s.record_failure("api")
