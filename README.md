@@ -2,9 +2,12 @@
 
 ### A Multi-Agent Framework for AI-Powered Enterprise API Orchestration
 
+[![CI](https://github.com/venkatapgummadi/agentflow/actions/workflows/ci.yml/badge.svg)](https://github.com/venkatapgummadi/agentflow/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
-[![CI](https://img.shields.io/badge/CI-passing-brightgreen.svg)](.github/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/agentflow.svg)](https://pypi.org/project/agentflow/)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230.svg)](https://github.com/astral-sh/ruff)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 **AgentFlow** is a production-grade Python framework where autonomous AI agents dynamically orchestrate, compose, and self-heal API workflows across enterprise integration platforms — with first-class MuleSoft Anypoint support.
 
@@ -133,6 +136,14 @@ Are you using AgentFlow at your company or in a project? We'd love to hear from 
 | [🐛 Bug Reports](../../issues/new?template=bug-report.md) | Report issues |
 
 If AgentFlow saves you time or solves a real problem, a ⭐ on this repo goes a long way — it helps more engineers find the framework.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=venkatapgummadi/agentflow&type=Date)](https://star-history.com/#venkatapgummadi/agentflow&Date)
+
+## Contributing
+
+Pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the dev workflow, and check the [`good first issue`](../../issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) and [`help wanted`](../../issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) labels for places to start. By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 
