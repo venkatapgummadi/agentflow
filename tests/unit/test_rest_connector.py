@@ -20,7 +20,18 @@ from agentflow.connectors.rest import (
 
 
 def _run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
+    """Run a coroutine in a fresh event loop.
+
+    The previous implementation called ``asyncio.get_event_loop()``,
+    which fails on Python 3.10+ once a previous async test has closed
+    its loop. Using ``asyncio.new_event_loop`` keeps these helpers
+    hermetic regardless of test ordering.
+    """
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
 
 
 SAMPLE_OPENAPI = {

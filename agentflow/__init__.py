@@ -1,5 +1,5 @@
 """
-AgentFlow — A Multi-Agent Framework for AI-Powered Enterprise API Orchestration.
+AgentFlow - A Multi-Agent Framework for AI-Powered Enterprise API Orchestration.
 
 A production-grade framework where autonomous AI agents dynamically orchestrate,
 compose, and self-heal API workflows across enterprise integration platforms,
@@ -9,7 +9,7 @@ Author: Venkata Pavan Kumar Gummadi
 License: Apache 2.0
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Venkata Pavan Kumar Gummadi"
 
 from agentflow.agents.executor import ExecutorAgent
@@ -23,6 +23,14 @@ from agentflow.connectors.rest.client import RESTConnector
 from agentflow.core.context import OrchestrationContext
 from agentflow.core.orchestrator import AgentOrchestrator
 from agentflow.core.plan import ExecutionPlan, PlanStep
+from agentflow.nlp.hybrid_intent_parser import HybridIntentParser
+from agentflow.nlp.intent_parser import IntentParser
+from agentflow.nlp.llm_intent_parser import LLMIntentParser
+from agentflow.nlp.llm_provider import (
+    CallableLLMProvider,
+    DeterministicMockProvider,
+    LLMProvider,
+)
 from agentflow.observability.metrics import MetricsCollector
 from agentflow.observability.tracer import Tracer
 from agentflow.resilience.bulkhead import Bulkhead, BulkheadRegistry
@@ -51,4 +59,10 @@ __all__ = [
     "ResponseCache",
     "Tracer",
     "MetricsCollector",
+    "IntentParser",
+    "LLMIntentParser",
+    "HybridIntentParser",
+    "LLMProvider",
+    "DeterministicMockProvider",
+    "CallableLLMProvider",
 ]

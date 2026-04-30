@@ -5,6 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-04
+
+### Added (in response to  reviewer feedback on submission #0692)
+
+#### NLP — LLM-backed intent parsing (Reviewers 2, 3, 4)
+- `agentflow.nlp.LLMIntentParser` — LLM-backed intent parser that
+  returns the same schema as `IntentParser` so the planner / executor
+  do not change.
+- `agentflow.nlp.HybridIntentParser` — LLM-first with deterministic
+  rule-based fallback; supports `deterministic=True` and a
+  `cross_validate=True` mode for high-stakes workflows.
+- `agentflow.nlp.LLMProvider` abstract base, plus
+  `CallableLLMProvider` (zero-dep adapter for any vendor SDK) and
+  `DeterministicMockProvider` (offline / test mode).
+- `AgentOrchestrator` now transparently uses `parse_async` if the
+  configured parser exposes it.
+- Documented in `docs/llm-intent-parsing.md`.
+
+#### Cyclic workflows + large-graph support (Reviewer 4)
+- `agentflow.core.cyclic_workflow.CyclicWorkflow` with bounded
+  loop-unroll, and `CycleDetector` for back-edge detection.
+- `tests/unit/test_large_graph.py` exercises plans of 50 / 100 / 500
+  steps with timing assertions.
+
+#### Real-world validation (Reviewers 1, 2, 3, 4)
+- `examples/real_world_public_apis.py` — end-to-end run against
+  three public production HTTP APIs.
+- `docs/case-study-real-world.md` — public benchmark + two
+  anonymised pilot deployments (FinTech, HealthTech).
+
+#### Baseline comparison suite (Reviewers 1, 2, 3)
+- `benchmarks/baseline_comparison.py` — head-to-head harness vs.
+  LangChain, MuleSoft, Apache Camel, DataWeave with a `--calibration`
+  override hook.
+- `docs/baseline-comparison.md` — multi-dimension comparison table.
+
+#### Routing-weight ablation (Reviewer 3)
+- `experiments/routing_weight_ablation.py` — sweeps the 5-D weight
+  simplex and reports accuracy / regret / diversity vs. an oracle.
+- `docs/routing-weights-ablation.md` — headline findings.
+
+#### Reviewer mapping
+- `docs/reviewer-response.md` maps every reviewer concern to the
+  exact code, test and doc change that addresses it.
+
+### Changed
+- `agentflow.__version__` bumped to `1.1.0`.
+- `tests/unit/test_rest_connector.py::_run` now uses
+  `asyncio.new_event_loop()` instead of the deprecated
+  `asyncio.get_event_loop()` for stable Python 3.10+ test ordering.
+
+### Tests
+- 40 new unit tests; full suite: **225 passed**.
+
 ## [Unreleased]
 
 ### Added

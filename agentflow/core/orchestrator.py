@@ -155,8 +155,16 @@ class AgentOrchestrator:
             intent,
         )
 
-        # Phase 1: Parse intent
-        parsed_intent = self.intent_parser.parse(intent)
+        # Phase 1: Parse intent.
+        # If the configured parser exposes ``parse_async`` (e.g. the
+        # ``LLMIntentParser`` / ``HybridIntentParser`` added in v1.1)
+        # use it so the orchestrator does not block the event loop on
+        # an LLM call. Otherwise fall back to the legacy sync parser.
+        parse_async = getattr(self.intent_parser, "parse_async", None)
+        if callable(parse_async):
+            parsed_intent = await parse_async(intent)
+        else:
+            parsed_intent = self.intent_parser.parse(intent)
         await context.set("intent_parser", "parsed", parsed_intent)
 
         # Phase 2: Discover APIs
