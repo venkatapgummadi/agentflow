@@ -9,7 +9,7 @@ Author: Venkata Pavan Kumar Gummadi
 License: Apache 2.0
 """
 
-__version__ = "1.1.0"
+__version__ = "1.1.2"
 __author__ = "Venkata Pavan Kumar Gummadi"
 
 from agentflow.agents.executor import ExecutorAgent

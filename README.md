@@ -83,7 +83,8 @@ result = await orchestrator.execute(
     "and create a loan application if score > 700"
 )
 
-# Or use the typed API
+# (Legacy v1.0 typed API still works; v1.1+ users should prefer the
+# HybridIntentParser path shown above.)
 from agentflow.agents import PlannerAgent, ExecutorAgent
 
 plan = await PlannerAgent().create_plan(

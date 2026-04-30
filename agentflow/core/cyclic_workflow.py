@@ -86,7 +86,18 @@ class CyclicWorkflow:
         ``tail`` inclusive) are duplicated ``max_iterations - 1`` extra
         times, with rewritten step IDs and dependency edges so the
         executor sees a normal DAG.
+
+        Raises ``ValueError`` if the input ``plan`` already contains a
+        cycle: unrolling a cyclic plan would silently produce a
+        cyclic DAG and deadlock the executor at runtime.
         """
+        cycles = CycleDetector.find_cycles(self.plan)
+        if cycles:
+            raise ValueError(
+                "input plan contains cycle(s) and cannot be unrolled: "
+                f"{cycles[0]}. Use add_loop() to express bounded "
+                "iteration instead of static back-edges."
+            )
         unrolled = ExecutionPlan(
             plan_id=self.plan.plan_id + "-unrolled",
             intent=self.plan.intent,
@@ -131,16 +142,16 @@ class CyclicWorkflow:
                     break
                 # rewrite intra-body deps; head depends on previous tail
                 for step in body:
-                    cloned = unrolled.get_step(local_id_map[step.step_id])
-                    if cloned is None:
+                    cloned_step = unrolled.get_step(local_id_map[step.step_id])
+                    if cloned_step is None:
                         continue
-                    new_deps = []
+                    new_deps: list[str] = []
                     for d in step.depends_on:
                         if d in local_id_map:
                             new_deps.append(local_id_map[d])
                         elif d in id_map:
                             new_deps.append(id_map[d])
-                    cloned.depends_on = new_deps
+                    cloned_step.depends_on = new_deps
                 # explicitly chain iterations
                 head_clone = unrolled.get_step(local_id_map[loop.head_step_id])
                 if head_clone is not None and previous_tail_id not in head_clone.depends_on:
@@ -282,9 +293,13 @@ class CyclicExecutor:
             outputs = await self._invoke(workflow.plan, iter_idx=0)
             return [outputs]
 
-        # We support a single top-level loop in the runtime path; nested
-        # loops still go through static unroll. This keeps the runtime
-        # contract small and predictable.
+        if len(workflow.loops) > 1:
+            raise NotImplementedError(
+                "CyclicExecutor.run currently supports a single top-level "
+                f"loop; got {len(workflow.loops)}. Use CyclicWorkflow.unroll() "
+                "for multi-loop workflows or open an issue if you need "
+                "runtime nested-loop support."
+            )
         loop = workflow.loops[0]
         history: list[dict[str, Any]] = []
         for iter_idx in range(loop.max_iterations):

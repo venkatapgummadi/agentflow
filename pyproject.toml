@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentflow"
-version = "1.1.0"
+version = "1.1.2"
 description = "A Multi-Agent Framework for AI-Powered Enterprise API Orchestration"
 readme = "README.md"
 license = {text = "Apache-2.0"}
@@ -28,7 +28,10 @@ classifiers = [
     "Topic :: System :: Distributed Computing",
 ]
 
-dependencies = []
+# aiohttp is used by the REST/MuleSoft connectors and the public-API
+# example, so a plain `pip install agentflow` should be enough to run
+# the helloworld and real-world examples without surprise ImportErrors.
+dependencies = ["aiohttp>=3.9.0"]
 
 [project.optional-dependencies]
 dev = [
@@ -53,7 +56,11 @@ Repository = "https://github.com/venkatapgummadi/agentflow"
 Issues = "https://github.com/venkatapgummadi/agentflow/issues"
 
 [tool.setuptools.packages.find]
-include = ["agentflow*"]
+# Ship the framework plus the reproducible-experiment scripts and the
+# baseline-modelling harness, so end users can run `python -m
+# experiments.parser_quality_benchmark` against their own LLM providers
+# after a plain `pip install agentflow`.
+include = ["agentflow*", "experiments*", "benchmarks*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

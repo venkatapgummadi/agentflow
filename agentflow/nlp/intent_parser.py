@@ -26,10 +26,26 @@ logger = logging.getLogger(__name__)
 
 OPERATION_PATTERNS: dict[str, list[str]] = {
     "api_call": [
+        # read-side verbs
         r"\b(fetch|get|retrieve|lookup|read|find|search|query)\b",
-        r"\b(create|post|add|insert|register|submit)\b",
-        r"\b(update|put|patch|modify|change|set)\b",
+        # creation / open
+        r"\b(create|post|add|insert|register|submit|open)\b",
+        # mutation
+        r"\b(update|put|patch|modify|change|set|adjust)\b",
+        # deletion / cancellation
         r"\b(delete|remove|destroy|drop|cancel)\b",
+        # decision verbs (common in enterprise workflows)
+        r"\b(approve|reject|deny|sign|authorize)\b",
+        # money / order verbs
+        r"\b(transfer|refund|charge|invoice|reorder|order)\b",
+        # validation verbs
+        r"\b(validate|verify|check|audit|confirm|reconcile)\b",
+        # notification verbs
+        r"\b(notify|alert|email|page|sms|message|announce)\b",
+        # workflow verbs
+        r"\b(trigger|apply|forward|route|escalate|dispatch)\b",
+        # lifecycle verbs
+        r"\b(enable|disable|activate|deactivate|suspend|resume|archive|restore)\b",
     ],
     "transform": [
         r"\b(enrich|augment|enhance|supplement|append)\b",

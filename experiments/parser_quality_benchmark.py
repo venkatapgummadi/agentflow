@@ -57,15 +57,27 @@ class Score:
         }
 
 
+# Sentinel for the rule parser's "I didn't recognise the verb" fallback.
+# Returning a sentinel from ``_normalize_verb`` for this case ensures the
+# benchmark cannot accidentally credit the fallback as a match against any
+# gold-standard verb, which would have biased the rule-parser score upward.
+_UNKNOWN_VERB = "<unknown>"
+
+
 def _normalize_verb(v: str) -> str:
     """
     Map surface verbs to the canonical set used in the gold labels.
 
     The rule parser produces surface forms ('get', 'fetch'); the gold
     labels use the same surface form, so the normaliser only collapses
-    obvious synonyms.
+    obvious synonyms. The literal verb ``'execute'`` is the rule
+    parser's fallback when no operation pattern matched -- we map it
+    to ``_UNKNOWN_VERB`` so it can never accidentally match a real
+    gold verb and inflate recall.
     """
     v = v.lower().strip()
+    if v == "execute":
+        return _UNKNOWN_VERB
     syn = {
         "retrieve": "retrieve", "lookup": "lookup", "fetch": "fetch", "get": "get",
         "create": "create", "open": "open", "submit": "submit", "post": "post",

@@ -58,7 +58,7 @@ result = parser.parse(intent, deterministic=True)
 assert result["source"] == "rule"
 ```
 
-This is what the HealthTech pilot in the case study uses by default.
+Use this for any audit-bound flow where determinism matters more than the LLM's flexibility.
 
 ## Cross-validation mode
 

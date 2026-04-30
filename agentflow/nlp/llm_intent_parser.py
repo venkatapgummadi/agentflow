@@ -80,22 +80,40 @@ class LLMIntentParser:
         )
     """
 
+    # Default safe upper bound on user-supplied intent length. Anything
+    # longer is almost certainly an error or an abuse vector (denial-of-wallet
+    # against the LLM provider, context-window overflow, prompt injection
+    # padding). Callers can raise this with ``max_chars=`` if they have a
+    # legitimate reason.
+    DEFAULT_MAX_CHARS = 8_000
+
     def __init__(
         self,
         provider: LLMProvider | None = None,
         system_prompt: str = _DEFAULT_SYSTEM,
         max_tokens: int = 1024,
         temperature: float = 0.0,
+        max_chars: int | None = None,
     ):
         self.provider = provider or DeterministicMockProvider()
         self.system_prompt = system_prompt
         self.max_tokens = max_tokens
         self.temperature = temperature
+        self.max_chars = max_chars if max_chars is not None else self.DEFAULT_MAX_CHARS
 
     async def parse_async(self, intent: str) -> dict[str, Any]:
         """Async entry-point. Returns the same schema as ``IntentParser.parse``."""
         if not intent or not intent.strip():
             return ParsedIntent(confidence=0.0).to_dict()
+
+        # Guard against runaway-size intents before hitting the provider.
+        if len(intent) > self.max_chars:
+            logger.warning(
+                "Intent length %d exceeds max_chars=%d; refusing to call LLM provider",
+                len(intent),
+                self.max_chars,
+            )
+            return ParsedIntent(raw_intent=intent[: self.max_chars], confidence=0.0).to_dict()
 
         request = LLMRequest(
             system=self.system_prompt,

@@ -6,6 +6,8 @@ Author: Venkata Pavan Kumar Gummadi
 
 from __future__ import annotations
 
+import math
+
 import pytest
 
 from benchmarks.baseline_comparison import (
@@ -62,3 +64,12 @@ async def test_speedup_table_baseline_is_one():
     # throughput should not fall below the slowest sequential baseline
     assert speedups["langchain"] >= 1.0
     assert speedups["apache_camel"] >= 1.0
+
+def test_speedup_table_sentinel_for_zero_throughput():
+    from benchmarks.baseline_comparison import BenchmarkResult, speedup_table
+
+    af = BenchmarkResult("agentflow", 1, 1, 1.0, 1.0, 1.0, 1.0, 1000.0, 0.0, 48)
+    zero = BenchmarkResult("langchain", 1, 1, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 142)
+    speedups = speedup_table([af, zero])
+    assert speedups["agentflow"] == 1.0
+    assert math.isinf(speedups["langchain"])

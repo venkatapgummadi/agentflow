@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-04 (deep-review fixes)
+
+### Fixed
+- **Rule parser missing enterprise verbs.** Expanded
+  `OPERATION_PATTERNS` to recognise approve / transfer / refund /
+  validate / verify / notify / order / trigger / apply / reconcile /
+  forward / adjust / email / open / etc. Rule-parser fall-throughs to
+  the generic `execute` operation dropped from 26/40 to 1/40 of the
+  labelled corpus.
+- **Benchmark crediting `execute` fallback.** `_normalize_verb` now
+  returns a sentinel `<unknown>` for `execute` so the
+  parser-quality benchmark cannot accidentally credit fall-throughs as
+  matches against gold verbs.
+- **Cycle-unsafe unroll.** `CyclicWorkflow.unroll()` now refuses to
+  process input plans that already contain cycles.
+- **Multi-loop silent drop.** `CyclicExecutor.run` now raises
+  `NotImplementedError` for `len(workflow.loops) > 1` instead of
+  silently ignoring loops 2..N.
+- **Zero-throughput speedup.** `benchmarks.baseline_comparison.speedup_table`
+  now returns `math.inf` when a baseline reports zero throughput,
+  instead of the misleading `0.0`.
+- **mypy strict errors.** Resolved 3 strict-mode errors in
+  `cyclic_workflow.py` and `llm_provider.py`.
+- **Documentation regressions.** Removed the dangling HealthTech-pilot
+  reference from `docs/llm-intent-parsing.md` (the pilot itself was
+  removed in 1.1.1 as fabricated). Updated `docs/reviewer-response.md`
+  with the actual test counts and the new parser-quality benchmark.
+  Cleaned the stale `[Unreleased]` entry in this CHANGELOG.
+
+### Added
+- **`max_chars` guard on `LLMIntentParser`.** Default 8 KB; intents
+  larger than this are rejected before reaching the provider, to
+  avoid context-window overflow and denial-of-wallet abuse.
+- **CI gates.** GitHub Actions now lints `experiments/` and
+  `benchmarks/`, runs `mypy --strict` on the new modules, and
+  smoke-runs each script.
+- **Packaging.** `experiments` and `benchmarks` are now part of the
+  installed wheel, so `pip install agentflow` ships them.
+- **Base dependency.** `aiohttp>=3.9.0` is now a base requirement
+  so the helloworld and public-API examples work after a plain
+  `pip install agentflow`.
+
+### Tests
+- 5 new safety-guard tests (oversize intent, cycle rejection,
+  multi-loop guard, speedup sentinel). Full suite: **245 passed**.
+
 ## [1.1.1] - 2026-04 (audit-driven corrections)
 
 ### Fixed
@@ -86,13 +132,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Tests
 - 40 new unit tests; full suite: **225 passed**.
-
-## [Unreleased]
-
-### Added
-- Unit tests for `RetryPolicy` covering all four backoff strategies
-  (exponential, linear, fibonacci, adaptive), error classification, retry
-  decisions, jitter bounds, and the backoff cap.
 
 ## [1.0.0] - 2025
 

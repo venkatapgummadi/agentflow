@@ -19,7 +19,7 @@ repo root.
 | --- | --- |
 | Synthetic benchmarks only; live-environment applicability unclear | Same as R1.1 above; plus the `examples/real_world_public_apis.py` JSON output is reproducible by any reviewer with `pip install agentflow[all]` |
 | Comparisons with LangChain / MuleSoft are shallow | `docs/baseline-comparison.md` adds a 7-row dimensions matrix beyond throughput |
-| NLP capabilities not sufficiently explored, especially for domain-specific language | New `agentflow/nlp/llm_intent_parser.py` and `agentflow/nlp/hybrid_intent_parser.py` add an LLM-backed parser with a `DeterministicMockProvider` and a `CallableLLMProvider` adapter for any vendor SDK; documented in `docs/llm-intent-parsing.md`; tested in `tests/unit/test_llm_intent_parser.py` (13 new tests) |
+| NLP capabilities not sufficiently explored, especially for domain-specific language | New `agentflow/nlp/llm_intent_parser.py` and `agentflow/nlp/hybrid_intent_parser.py` add an LLM-backed parser with a `DeterministicMockProvider` and a `CallableLLMProvider` adapter for any vendor SDK; documented in `docs/llm-intent-parsing.md`; tested in `tests/unit/test_llm_intent_parser.py` (16 unit tests covering mock + callable providers, hybrid fallback, cross-validation, and the v1.1.2 oversize-input guard); quality measured against a 40-intent hand-labelled corpus in `experiments/intent_corpus.py` via `experiments/parser_quality_benchmark.py` (see `docs/parser-quality.md`) |
 
 ## Reviewer 3 (accept, score 2)
 

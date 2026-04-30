@@ -50,6 +50,7 @@ import argparse
 import asyncio
 import json
 import logging
+import math as _math
 import statistics
 import time
 from dataclasses import dataclass, field
@@ -245,11 +246,16 @@ async def run_all(
 
 
 def speedup_table(results: list[BenchmarkResult]) -> dict[str, float]:
+    # Returns math.inf when a baseline reports zero throughput, so a
+    # divide-by-zero is explicit in JSON output rather than silently 0.0.
     base = next(r for r in results if r.framework == "agentflow")
-    return {
-        r.framework: round(base.throughput_rps / r.throughput_rps, 3) if r.throughput_rps else 0.0
-        for r in results
-    }
+    out: dict[str, float] = {}
+    for r in results:
+        if r.throughput_rps == 0:
+            out[r.framework] = _math.inf
+        else:
+            out[r.framework] = round(base.throughput_rps / r.throughput_rps, 3)
+    return out
 
 
 def main() -> int:

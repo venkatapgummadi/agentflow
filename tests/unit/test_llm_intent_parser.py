@@ -158,3 +158,29 @@ async def test_concurrent_calls_are_safe():
     ]
     results = await asyncio.gather(*[parser.parse_async(i) for i in intents])
     assert all(r["confidence"] > 0 for r in results)
+
+
+# ── safety guards added in v1.1.2 ────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_llm_parser_rejects_oversized_intent():
+    parser = LLMIntentParser(max_chars=100)
+    big = "fetch customer 42 " * 100  # > 100 chars
+    result = await parser.parse_async(big)
+    assert result["confidence"] == 0.0
+    assert result["operations"] == []
+
+
+@pytest.mark.asyncio
+async def test_llm_parser_max_chars_default_is_8000():
+    parser = LLMIntentParser()
+    assert parser.max_chars == 8000
+
+
+@pytest.mark.asyncio
+async def test_llm_parser_accepts_intent_at_boundary():
+    parser = LLMIntentParser(max_chars=200)
+    intent = "fetch customer 42 " * 5  # ~90 chars
+    result = await parser.parse_async(intent)
+    assert result["operations"]

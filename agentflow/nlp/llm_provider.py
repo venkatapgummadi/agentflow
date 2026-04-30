@@ -173,15 +173,19 @@ def _safe_json_extract(text: str) -> dict[str, Any]:
     """Pull the first JSON object out of ``text``; tolerate prose around it."""
     if not text:
         return {}
+
+    def _coerce(obj: Any) -> dict[str, Any]:
+        return obj if isinstance(obj, dict) else {}
+
     try:
-        return json.loads(text)
+        return _coerce(json.loads(text))
     except json.JSONDecodeError:
         pass
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if not match:
         return {}
     try:
-        return json.loads(match.group(0))
+        return _coerce(json.loads(match.group(0)))
     except json.JSONDecodeError:
         return {}
 

@@ -207,3 +207,30 @@ async def test_cyclic_executor_supports_sync_runner_and_predicate():
 
     history = await CyclicExecutor(run_iteration=runner).run(cw)
     assert len(history) == 2
+
+
+# ── safety guards added in v1.1.2 ────────────────────────────────────────
+
+
+def test_unroll_rejects_cyclic_input_plan():
+    plan = _three_step_plan()
+    # inject a back-edge so the input is cyclic
+    plan.steps[0].depends_on.append(plan.steps[2].step_id)
+    cw = CyclicWorkflow(plan=plan)
+    cw.add_loop(plan.steps[0].step_id, plan.steps[2].step_id, max_iterations=2)
+    with pytest.raises(ValueError, match="cycle"):
+        cw.unroll()
+
+
+@pytest.mark.asyncio
+async def test_cyclic_executor_rejects_multi_loop():
+    plan = _three_step_plan()
+    cw = CyclicWorkflow(plan=plan)
+    cw.add_loop(plan.steps[0].step_id, plan.steps[2].step_id, max_iterations=2)
+    cw.add_loop(plan.steps[0].step_id, plan.steps[2].step_id, max_iterations=2)
+
+    async def runner(p, i):
+        return {}
+
+    with pytest.raises(NotImplementedError, match="single top-level loop"):
+        await CyclicExecutor(run_iteration=runner).run(cw)
