@@ -42,11 +42,13 @@ dev = [
     "mypy>=1.5",
 ]
 all = [
-    "aiohttp>=3.9.0",
+    # aiohttp is now in base dependencies; keep pydantic here for
+    # users who want the typed-config helpers.
     "pydantic>=2.0",
 ]
 mulesoft = [
-    "aiohttp>=3.9.0",
+    # aiohttp is now in base dependencies; this extra only adds the
+    # YAML parser used by Anypoint config files.
     "pyyaml>=6.0",
 ]
 

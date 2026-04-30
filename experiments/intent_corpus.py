@@ -29,10 +29,9 @@ class LabelledIntent:
     entities: dict[str, list[str]] = field(default_factory=dict)
     conditions: int = 0
     domain: str = ""
-    # Optional: expected numeric thresholds in the intent, when present.
-    # Captured separately from ``entities['numeric_id']`` because the rule
-    # parser exposes a dedicated ``threshold`` entity type.
-    thresholds: list[str] = field(default_factory=list)
+    # NOTE: The corpus currently labels only numeric_id entities. Adding
+    # an explicit ``thresholds`` field is on the roadmap once we hand-label
+    # threshold values for every conditional intent.
 
 
 CORPUS: list[LabelledIntent] = [

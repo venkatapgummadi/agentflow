@@ -1036,3 +1036,38 @@ The five-layer architecture provides clear separation of concerns while the Blac
 **Document Version:** 1.0  
 **Last Reviewed:** 2026-04-11  
 **Author:** Venkata Pavan Kumar Gummadi
+
+
+---
+
+## v1.1+ additions
+
+The original architecture diagram still applies, but two layers gained
+new components in v1.1.x:
+
+### Intent layer
+
+* `IntentParser` (rule-based, deterministic) -- v1.0.
+* `LLMIntentParser` (LLM-backed via a pluggable provider) -- v1.1.
+* `HybridIntentParser` (LLM-first with deterministic fallback) -- v1.1.
+* `LLMProvider`, `CallableLLMProvider`, `DeterministicMockProvider` --
+  the provider abstraction that lets AgentFlow plug into any LLM SDK
+  without taking a hard dependency on it.
+
+`AgentOrchestrator` transparently uses `parse_async` if the configured
+parser exposes it, so existing user code works unchanged.
+
+### Plan layer
+
+* `CyclicWorkflow` -- wraps an `ExecutionPlan` with explicit
+  `LoopEdge` definitions for poll-until-ready / iterative-enrichment
+  patterns.
+* `CyclicExecutor` -- runtime executor that evaluates a `terminate_when`
+  predicate after each iteration and stops early when it returns True.
+* `CycleDetector` -- DFS-based back-edge finder used both by users
+  who want to validate plans and by `CyclicWorkflow.unroll()` to
+  refuse cyclic input.
+
+See `docs/llm-intent-parsing.md` for the parser-side details and the
+`agentflow.core.cyclic_workflow` module docstring for the loop-unroll
+semantics.

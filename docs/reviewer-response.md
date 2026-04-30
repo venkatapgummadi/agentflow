@@ -75,3 +75,27 @@ paper rebuttal:
 | README did not mention v1.1 features | Added a "What's new in v1.1.0" section + a HybridIntentParser quick-start example |
 
 Test count after this round: **240 passed** (up from 225). `ruff` clean.
+
+
+## v1.1.2 deep-review fixes
+
+After v1.1.1 a deeper code-and-doc audit surfaced more issues that
+were addressed before this revision was considered ready:
+
+| Issue | Fix |
+| --- | --- |
+| Rule parser missed many enterprise verbs (approve / transfer / refund / validate / verify / notify / order / trigger / apply / reconcile / forward / adjust / email / open) — execute-fallback fired on 26/40 corpus intents | Expanded `OPERATION_PATTERNS` in `agentflow/nlp/intent_parser.py` to cover 11 verb classes; fall-through dropped to 1/40 |
+| Parser-quality benchmark credited the `execute` fallback as a match | `_normalize_verb` now returns a `<unknown>` sentinel for `execute` |
+| `CyclicWorkflow.unroll()` did not detect cycles in the input plan | `unroll()` now raises `ValueError` if `CycleDetector` finds any cycle |
+| `CyclicExecutor.run` silently dropped loops 2..N | now raises `NotImplementedError` for `len(workflow.loops) > 1` |
+| `LLMIntentParser` had no input-length guard | new `max_chars` parameter (default 8 KB) |
+| `speedup_table` returned `0.0` on zero-throughput baselines | now returns `math.inf` |
+| 3 mypy-strict errors in new modules | resolved; `mypy --strict` clean on `llm_provider.py`, `llm_intent_parser.py`, `hybrid_intent_parser.py`, `cyclic_workflow.py` |
+| Dangling HealthTech-pilot reference in `docs/llm-intent-parsing.md` | removed |
+| `experiments/` and `benchmarks/` not packaged in wheel | added to `setuptools.packages.find` |
+| `aiohttp` was an optional extra even though connectors required it | moved into base `dependencies` |
+| CI did not lint experiments / run mypy / smoke-run scripts | `.github/workflows/ci.yml` now does all three |
+
+Test count after this round: **246 passed** (up from 240). `ruff`,
+`mypy --strict`, and the smoke-runs all green across 5 consecutive
+runs.
