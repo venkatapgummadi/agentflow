@@ -6,7 +6,14 @@ Author: Venkata Pavan Kumar Gummadi
 
 from __future__ import annotations
 
-from agentflow.core.cyclic_workflow import CycleDetector, CyclicWorkflow, LoopEdge
+import pytest
+
+from agentflow.core.cyclic_workflow import (
+    CycleDetector,
+    CyclicExecutor,
+    CyclicWorkflow,
+    LoopEdge,
+)
 from agentflow.core.plan import ExecutionPlan, PlanStep
 
 
@@ -104,3 +111,99 @@ def test_clone_preserves_definition():
     # mutating clone does not affect original
     c.parameters["b"] = 2
     assert "b" not in s.parameters
+
+
+# ── runtime CyclicExecutor tests ─────────────────────────────────────────
+
+
+
+@pytest.mark.asyncio
+async def test_cyclic_executor_runs_to_max_when_no_terminator():
+    plan = _three_step_plan()
+    cw = CyclicWorkflow(plan=plan)
+    cw.add_loop(plan.steps[0].step_id, plan.steps[2].step_id, max_iterations=4)
+
+    calls: list[int] = []
+
+    async def runner(plan, iter_idx):
+        calls.append(iter_idx)
+        return {"iter": iter_idx, "status": "pending"}
+
+    executor = CyclicExecutor(run_iteration=runner)
+    history = await executor.run(cw)
+    assert calls == [0, 1, 2, 3]
+    assert len(history) == 4
+
+
+@pytest.mark.asyncio
+async def test_cyclic_executor_terminates_early():
+    plan = _three_step_plan()
+    cw = CyclicWorkflow(plan=plan)
+
+    async def stop_at_2(outputs, iter_idx):
+        return outputs.get("iter") == 2
+
+    cw.add_loop(
+        plan.steps[0].step_id,
+        plan.steps[2].step_id,
+        max_iterations=10,
+        terminate_when=stop_at_2,
+    )
+
+    async def runner(plan, iter_idx):
+        return {"iter": iter_idx}
+
+    history = await CyclicExecutor(run_iteration=runner).run(cw)
+    assert len(history) == 3  # 0, 1, 2 — stopped after seeing iter==2
+
+
+@pytest.mark.asyncio
+async def test_cyclic_executor_handles_predicate_exception():
+    plan = _three_step_plan()
+    cw = CyclicWorkflow(plan=plan)
+
+    def bad(outputs, iter_idx):
+        raise RuntimeError("boom")
+
+    cw.add_loop(plan.steps[0].step_id, plan.steps[2].step_id, max_iterations=2, terminate_when=bad)
+
+    async def runner(plan, iter_idx):
+        return {}
+
+    history = await CyclicExecutor(run_iteration=runner).run(cw)
+    # predicate failures are treated as "do not terminate" -> runs to max
+    assert len(history) == 2
+
+
+@pytest.mark.asyncio
+async def test_cyclic_executor_no_loop_runs_once():
+    plan = _three_step_plan()
+    cw = CyclicWorkflow(plan=plan)
+
+    async def runner(plan, iter_idx):
+        return {"once": True}
+
+    history = await CyclicExecutor(run_iteration=runner).run(cw)
+    assert history == [{"once": True}]
+
+
+@pytest.mark.asyncio
+async def test_cyclic_executor_supports_sync_runner_and_predicate():
+    plan = _three_step_plan()
+    cw = CyclicWorkflow(plan=plan)
+
+    def stop_at_1(outputs, iter_idx):
+        return iter_idx == 1
+
+    cw.add_loop(
+        plan.steps[0].step_id,
+        plan.steps[2].step_id,
+        max_iterations=5,
+        terminate_when=stop_at_1,
+    )
+
+    def runner(plan, iter_idx):  # sync
+        return {"iter": iter_idx}
+
+    history = await CyclicExecutor(run_iteration=runner).run(cw)
+    assert len(history) == 2

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentflow"
-version = "1.0.0"
+version = "1.1.0"
 description = "A Multi-Agent Framework for AI-Powered Enterprise API Orchestration"
 readme = "README.md"
 license = {text = "Apache-2.0"}

@@ -55,3 +55,23 @@ python -m experiments.routing_weight_ablation --requests 1000 --grid 4
 python -m benchmarks.baseline_comparison --workflows 200 --concurrency 50
 python  examples/real_world_public_apis.py --workflows 50 --concurrency 10
 ```
+
+
+## v1.1.1 audit-driven corrections (post-self-review)
+
+After the initial v1.1 push, an internal audit surfaced several gaps
+that had to be addressed before the artifact could honestly back the
+paper rebuttal:
+
+| Gap | Fix |
+| --- | --- |
+| `docs/case-study-real-world.md` contained fabricated FinTech / HealthTech pilot numbers | Doc rewritten to be a *reproducible recipe* with no fabricated production-pilot stats; explicitly notes what was removed |
+| Headline numbers in `docs/baseline-comparison.md` and `docs/routing-weights-ablation.md` did not match the actual scripts | Both docs regenerated from real script output with `--seed` pinned |
+| `benchmarks/baseline_comparison.py` was framed as a measurement | Module + class docstrings now make it explicit that the harness uses calibrated `asyncio.sleep` adapters, not real LangChain / MuleSoft / etc. |
+| `LoopEdge.terminate_when` was dead code | New `CyclicExecutor` evaluates the predicate at runtime and stops early; tests cover both behaviours |
+| `pyproject.toml` version was still `1.0.0` | Bumped to `1.1.0` to match `agentflow/__init__.py` |
+| No labelled corpus / LLM-vs-rule benchmark | New `experiments/intent_corpus.py` (40 hand-labelled intents across 4 verticals) + `experiments/parser_quality_benchmark.py` + `docs/parser-quality.md` |
+| `tests/integration/` was empty | New `tests/integration/test_orchestrator_hybrid_e2e.py` exercises the full orchestrator pipeline with the rule, LLM, and hybrid parsers |
+| README did not mention v1.1 features | Added a "What's new in v1.1.0" section + a HybridIntentParser quick-start example |
+
+Test count after this round: **240 passed** (up from 225). `ruff` clean.

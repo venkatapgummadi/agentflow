@@ -1,11 +1,23 @@
 """
-Head-to-head benchmark harness for AgentFlow vs. industry baselines.
+Calibrated *modelling* harness for AgentFlow vs. industry baselines.
 
-Reviewers 1, 2, and 3 asked for a deeper, more apples-to-apples
-comparison against existing tools (LangChain, Apache Camel, MuleSoft,
-DataWeave). To keep the benchmark reproducible without forcing every
-contributor to install JVMs and SaaS credentials, this harness uses a
-**stand-in adapter** layer:
+**This is not a head-to-head measurement against real LangChain /
+MuleSoft / Apache Camel / DataWeave installations.** It is a model of
+each system's scheduling cost using calibrated `asyncio.sleep`
+adapters whose constants are sourced from published numbers (see the
+``DEFAULT_CALIBRATION`` dict and ``benchmarks/calibration.json``).
+Treat the output as an *order-of-magnitude* sanity check, not an
+empirical benchmark.
+
+Why this exists. Reviewers 1, 2, and 3 asked for deeper comparison
+against industry tools. A real comparison requires JVM installs and
+SaaS credentials and is the subject of follow-up work; this harness
+exposes the *assumptions* that drive AgentFlow's relative-throughput
+claims so reviewers can probe them via ``--calibration`` overrides
+without rebuilding the test environment.
+
+Each baseline is modelled by a stand-in adapter that mirrors the
+target system's scheduling pattern:
 
 * ``AgentFlowAdapter``   — wraps the actual ``AgentOrchestrator``.
 * ``LangChainStubAdapter``  — emulates LangChain's sequential-chain
@@ -102,11 +114,20 @@ class _BaseAdapter:
 
 
 class AgentFlowAdapter(_BaseAdapter):
+    """
+    Models AgentFlow's work-stealing scheduler.
+
+    NOTE: This does **not** invoke the real ``AgentOrchestrator``; it
+    models the per-step cost the orchestrator pays when there is no
+    network IO. To exercise the real orchestrator end-to-end against
+    public APIs, use ``examples/real_world_public_apis.py`` instead.
+    """
+
     name = "agentflow"
 
     async def run_workflow(self, n_steps: int) -> bool:
-        # parallel, work-stealing: all steps "complete" with per_step_ms each
-        # but they run concurrently up to a soft limit of 16
+        # Parallel, work-stealing: all steps complete with per_step_ms each
+        # but run concurrently up to a soft limit of 16.
         per = self.cal["per_step_ms"] / 1000
         groups = (n_steps + 15) // 16
         await asyncio.sleep(groups * per)

@@ -1,37 +1,68 @@
-# Head-to-head Comparison vs. Industry Baselines
+# Modelled Comparison vs. Industry Baselines
 
-> **Why this document exists.** Reviewers 1, 2 and 3 asked for a
-> deeper, fairer comparison against LangChain, MuleSoft, Apache Camel
-> and DataWeave — not just the headline throughput number.
+> **Read this first.** The numbers in this document come from
+> `benchmarks/baseline_comparison.py`, which uses **calibrated
+> `asyncio.sleep` adapters** to model each system's scheduling cost.
+> No real LangChain / MuleSoft / Apache Camel / DataWeave instance is
+> invoked. Treat the table below as an *order-of-magnitude*
+> sanity check, not an empirical benchmark. A real, fully-instrumented
+> head-to-head against installed baselines is on the roadmap.
 
-## How the comparison is run
+## What this document does claim
 
-Script: `benchmarks/baseline_comparison.py`
+* Documents the *assumptions* behind AgentFlow's relative-throughput
+  story (per-step overhead, scheduling model, memory footprint).
+* Lets a reviewer probe those assumptions by overriding the
+  calibration table with `--calibration my_numbers.json`.
 
-The harness uses **calibrated stand-in adapters** for each baseline.
-Per-step overhead, scheduling model and steady-state memory come from
-the AgentFlow paper Tables 4 and 6 and from the calibration JSON in
-`benchmarks/`. Reviewers can supply their own measurements via
-`--calibration my_numbers.json` to re-run the comparison with
-different assumptions; nothing is hidden inside the code.
+## What this document does *not* claim
+
+* It does not measure real LangChain etc. throughput on your
+  hardware. For that, install the baseline and re-run with measured
+  per-step cost.
+* It does not replace `examples/real_world_public_apis.py`, which
+  exercises the actual `AgentOrchestrator` against real HTTP APIs.
+
+## How the model is calibrated
+
+Per-step overhead and steady-state memory come from the calibration
+dict in `benchmarks/baseline_comparison.py`. The published values
+are an opening estimate, deliberately conservative for AgentFlow:
+
+| Framework      | per_step_ms | scheduling             | memory_mb |
+| --- | --- | --- | --- |
+| agentflow      | 0.18        | work-stealing          | 48       |
+| langchain      | 0.34        | sequential             | 142       |
+| apache_camel   | 0.62        | thread-per-route       | 312       |
+| mulesoft       | 0.48        | fixed-worker           | 268       |
+| dataweave      | 0.21        | transform-only         | 96       |
+
+
+## Reproduce
 
 ```bash
-python -m benchmarks.baseline_comparison --workflows 200 --concurrency 50 --steps 8
+python -m benchmarks.baseline_comparison \
+    --workflows 200 --concurrency 50 --steps 8
 ```
 
-## Default-calibration results (200 workflows, concurrency 50, 8 steps)
+## Modelled results (workflows=200, concurrency=50, steps=8)
 
-| Framework | Throughput (rps) | P95 latency (ms) | Memory (MB) | AgentFlow speedup |
-| --- | --- | --- | --- | --- |
-| AgentFlow | 27,382 | 0.73 | 48 | 1.00x |
-| MuleSoft (stub) | 12,349 | 1.74 | 268 | 2.22x |
-| DataWeave (stub) | 8,489 | 2.70 | 96 | 3.23x |
-| LangChain (stub) | 5,870 | 3.86 | 142 | 4.67x |
-| Apache Camel (stub) | 3,090 | 7.79 | 312 | 8.86x |
+| Framework      | Throughput (rps) | P50 ms | P95 ms | Memory (MB) | AgentFlow speedup |
+| --- | --- | --- | --- | --- | --- |
+| agentflow      | 42870.7          | 0.40   | 1.10   | 48          | 1.00x             |
+| mulesoft       | 21060.7          | 1.66   | 2.13   | 268         | 2.04x             |
+| dataweave      | 16526.3          | 2.61   | 2.75   | 96          | 2.59x             |
+| langchain      | 12063.0          | 3.61   | 4.17   | 142         | 3.55x             |
+| apache_camel   | 6085.4           | 7.77   | 7.87   | 312         | 7.04x             |
 
-Numbers are stable across runs to within ±5% on a 4-core runner.
+
+Numbers are stable across runs of the model to within a few percent
+because the harness drives the scheduler to its asymptotic behavior;
+real-world measurements vary much more.
 
 ## Dimensions beyond throughput
+
+These are qualitative and not produced by the script.
 
 | Dimension | AgentFlow | LangChain | MuleSoft | Apache Camel | DataWeave |
 | --- | --- | --- | --- | --- | --- |
@@ -41,15 +72,13 @@ Numbers are stable across runs to within ±5% on a 4-core runner.
 | LLM-pluggable intent parsing | yes (v1.1+) | yes | no | no | n/a |
 | First-class MuleSoft connector | yes | partial | n/a | yes | yes |
 | Compliance-friendly determinism | yes (rule fallback) | partial | yes | yes | yes |
-| Memory footprint (steady) | 48 MB | 142 MB | 268 MB | 312 MB | 96 MB |
 
-## Why this answers the reviews
+## Why this still answers the reviews
 
-* **Reviewer 1** asked for industry-tool comparison — every cell above
-  is a concrete dimension, not a hand-wavy claim.
-* **Reviewer 2** said the LangChain / MuleSoft comparison was
-  "shallow". The harness now compares scheduling cost, memory, and
-  resilience semantics, not just throughput.
-* **Reviewer 3** flagged the lack of repeatability. The harness emits
-  JSON and accepts external calibration files; everything is
-  reproducible from a single Python module.
+* The harness is now explicit about what it models vs. measures, so
+  reviewers can criticise the *calibration*, not the methodology.
+* The `--calibration` override means a reviewer who disagrees with
+  the per-step overhead estimates can swap in their own measurements
+  and re-run in seconds.
+* For a real (small-scale) measurement, see
+  `docs/case-study-real-world.md` and `examples/real_world_public_apis.py`.

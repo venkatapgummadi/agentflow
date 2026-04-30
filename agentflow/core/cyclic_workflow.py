@@ -240,3 +240,80 @@ def _new_id() -> str:
     import uuid
 
     return str(uuid.uuid4())[:8]
+
+
+# ── runtime cyclic executor ──────────────────────────────────────────────
+
+
+class CyclicExecutor:
+    """
+    Runtime cyclic-workflow executor.
+
+    Where ``CyclicWorkflow.unroll()`` produces a *static* DAG that
+    ignores ``terminate_when``, ``CyclicExecutor.run`` evaluates the
+    termination predicate after each iteration and stops early.
+
+    Usage::
+
+        async def stop_when_ready(outputs, iter_idx):
+            return outputs.get("status") == "ready"
+
+        cw = CyclicWorkflow(plan=plan)
+        cw.add_loop("poll", "tail", max_iterations=10, terminate_when=stop_when_ready)
+
+        executor = CyclicExecutor(run_iteration=my_iteration_runner)
+        history = await executor.run(cw)
+        print(f"converged after {len(history)} iterations")
+    """
+
+    def __init__(
+        self,
+        run_iteration: Callable[[ExecutionPlan, int], Any],
+    ):
+        # ``run_iteration`` is supplied by the caller so this module
+        # stays free of any executor / connector dependency. It MUST be
+        # async and return a dict of outputs for one iteration.
+        self._run_iteration = run_iteration
+
+    async def run(self, workflow: CyclicWorkflow) -> list[dict[str, Any]]:
+        import asyncio
+
+        if not workflow.loops:
+            outputs = await self._invoke(workflow.plan, iter_idx=0)
+            return [outputs]
+
+        # We support a single top-level loop in the runtime path; nested
+        # loops still go through static unroll. This keeps the runtime
+        # contract small and predictable.
+        loop = workflow.loops[0]
+        history: list[dict[str, Any]] = []
+        for iter_idx in range(loop.max_iterations):
+            outputs = await self._invoke(workflow.plan, iter_idx=iter_idx)
+            history.append(outputs)
+            if loop.terminate_when is not None:
+                try:
+                    should_stop = loop.terminate_when(outputs, iter_idx)
+                    if asyncio.iscoroutine(should_stop):
+                        should_stop = await should_stop
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning("terminate_when raised %s; treating as False", exc)
+                    should_stop = False
+                if should_stop:
+                    logger.info(
+                        "CyclicExecutor terminated after %d iterations (predicate True)",
+                        iter_idx + 1,
+                    )
+                    break
+        return history
+
+    async def _invoke(self, plan: ExecutionPlan, iter_idx: int) -> dict[str, Any]:
+        import asyncio
+
+        result = self._run_iteration(plan, iter_idx)
+        if asyncio.iscoroutine(result):
+            result = await result
+        if not isinstance(result, dict):
+            raise TypeError(
+                "run_iteration must return a dict of outputs for the iteration"
+            )
+        return result

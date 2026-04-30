@@ -9,6 +9,13 @@
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230.svg)](https://github.com/astral-sh/ruff)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
+### What's new in v1.1.0
+
+* **LLM-pluggable intent parsing** — `HybridIntentParser` (LLM-first with rule-based fallback), `LLMIntentParser`, and a `CallableLLMProvider` adapter so you can plug in any vendor SDK without AgentFlow taking a hard dependency on it. See `docs/llm-intent-parsing.md`.
+* **Cyclic workflows** — `CyclicWorkflow` + `CyclicExecutor` for poll-until-ready / iterative-enrichment patterns, with a runtime `terminate_when` predicate. See `agentflow.core.cyclic_workflow`.
+* **Reproducible experiments and benchmarks** — `experiments/parser_quality_benchmark.py`, `experiments/routing_weight_ablation.py`, `benchmarks/baseline_comparison.py`, `examples/real_world_public_apis.py`.
+* **New docs** — `docs/parser-quality.md`, `docs/baseline-comparison.md`, `docs/routing-weights-ablation.md`, `docs/case-study-real-world.md`, `docs/reviewer-response.md`.
+
 **AgentFlow** is a production-grade Python framework where autonomous AI agents dynamically orchestrate, compose, and self-heal API workflows across enterprise integration platforms — with first-class MuleSoft Anypoint support.
 
 ## The Problem
@@ -84,6 +91,36 @@ plan = await PlannerAgent().create_plan(
     available_apis=orchestrator.discover_apis()
 )
 result = await ExecutorAgent().execute_plan(plan)
+```
+
+### v1.1 — Hybrid LLM + rule-based intent parsing
+
+```python
+from agentflow import (
+    AgentOrchestrator, HybridIntentParser, RESTConnector,
+)
+
+# Default: rule-based when offline; swap in an LLM provider for richer parsing.
+orchestrator = AgentOrchestrator(
+    intent_parser=HybridIntentParser(),
+    connectors=[RESTConnector(base_url="https://api.example.com")],
+)
+result = await orchestrator.execute(
+    "Fetch customer 42 from CRM and create an order if KYC is valid"
+)
+```
+
+To plug in a real LLM (zero AgentFlow dependency on vendor SDKs):
+
+```python
+from agentflow.nlp import CallableLLMProvider, HybridIntentParser, LLMIntentParser
+
+async def call_openai(req):
+    # ... your async OpenAI call returning a JSON string ...
+    return json_string
+
+provider = CallableLLMProvider(call_openai, name="openai", model="gpt-4o-mini")
+parser   = HybridIntentParser(llm_parser=LLMIntentParser(provider=provider))
 ```
 
 ## Key Features

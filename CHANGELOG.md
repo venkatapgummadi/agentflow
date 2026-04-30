@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-04 (audit-driven corrections)
+
+### Fixed
+- Removed fabricated pilot numbers from `docs/case-study-real-world.md`.
+- Regenerated `docs/baseline-comparison.md` and
+  `docs/routing-weights-ablation.md` from actual script output;
+  pinned `--seed 42` so numbers are reproducible.
+- Reframed `benchmarks/baseline_comparison.py` so the docstrings make
+  the calibrated-stub nature explicit.
+- Wired `LoopEdge.terminate_when` into a new `CyclicExecutor`; the
+  callback was previously stored but never evaluated.
+- Bumped `pyproject.toml` to `1.1.0` (was still `1.0.0`).
+
+### Added
+- `experiments/intent_corpus.py` — 40 hand-labelled enterprise intents
+  across FinTech, HealthTech, E-Commerce, Insurance.
+- `experiments/parser_quality_benchmark.py` — head-to-head quality
+  benchmark for rule vs. LLM-backed parsers; doc in
+  `docs/parser-quality.md`.
+- `tests/integration/test_orchestrator_hybrid_e2e.py` — first
+  integration test exercising the orchestrator with each parser
+  variant.
+- `README.md` — "What's new in v1.1.0" section + `HybridIntentParser`
+  quick-start snippet.
+
+### Tests
+- 15 new tests; full suite: **240 passed**.
+
 ## [1.1.0] - 2026-04
 
 ### Added (in response to  reviewer feedback on submission #0692)

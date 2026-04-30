@@ -1,12 +1,22 @@
-# Real-World Deployment Case Study
+# Real-world deployment recipe
 
-> **Why this document exists.** Reviewers 1, 2, 3 and 4 of the
-> AgentFlow  submission asked for evaluation beyond
-> simulated connectors. This document records a reproducible end-to-end
-> run against three public production HTTP APIs, plus a description
-> of two internal pilot deployments.
+> **Read this first.** This document does *not* report finished
+> production-pilot results. It provides a reproducible recipe for
+> running AgentFlow against real public APIs so reviewers and users
+> can generate their own measurements. The fabricated pilot numbers
+> that appeared in an earlier draft of this document have been
+> removed.
 
-## 1. Public-API benchmark (reproducible by anyone)
+## Why this document exists
+
+Reviewers 1, 2, 3 and 4 of  submission #0692 asked for
+evaluation beyond simulated connectors. The shortest credible answer
+is to give anyone with a Python install a one-command path to
+exercise the full `AgentOrchestrator` against real production APIs
+and capture latency, throughput and error-rate metrics on their own
+hardware. That recipe is below.
+
+## Recipe: public-API benchmark
 
 Script: `examples/real_world_public_apis.py`
 
@@ -18,60 +28,43 @@ Script: `examples/real_world_public_apis.py`
 | `jsonplaceholder_posts` | `https://jsonplaceholder.typicode.com/posts/1` | fake-but-real REST CRUD |
 | `publicapis_entries` | `https://api.publicapis.org/entries?limit=1` | public-API directory |
 
-**How to reproduce**
+**Reproduce on your machine**
 
 ```bash
 pip install -e ".[all]"
 python examples/real_world_public_apis.py --workflows 50 --concurrency 10 --json
 ```
 
-**Headline numbers (n = 200, concurrency = 25, GitHub-hosted runner, Apr 2026)**
+The script emits a JSON record with `throughput_rps`, `p50_ms`,
+`p95_ms`, `error_rate`, and the list of upstream targets. Paste the
+JSON into a follow-up issue if you want it included in the next
+revision of this doc.
 
-| Metric | Value |
+## Honest caveats
+
+* **Network-dependent.** The script requires outbound HTTPS to the
+  three target domains. In an offline / air-gapped CI environment
+  every call fails and `error_rate` correctly reports `1.0` -- which
+  is itself a useful resilience-path test.
+* **Rate limits.** The targets are free public services. Throughput
+  is bounded by their rate limits, not by AgentFlow.
+* **No production-pilot numbers in this doc.** The previous draft
+  included specific FinTech and HealthTech pilot statistics. Those
+  numbers were not measured -- they have been removed pending real
+  measurements from a real deployment.
+
+## What to look at instead, today
+
+| If you want | Look at |
 | --- | --- |
-| Throughput | 41.2 workflows/s |
-| Latency P50 | 184 ms |
-| Latency P95 | 462 ms |
-| Error rate | 0.5% |
+| Modelled comparison vs. baselines | `docs/baseline-comparison.md` (clearly labelled as a model, not a measurement) |
+| Routing-weight sensitivity from real script output | `docs/routing-weights-ablation.md` |
+| Parser-quality numbers for rule vs. LLM-backed parsing | `docs/parser-quality.md` and `experiments/parser_quality_benchmark.py` |
+| The full unit-test suite exercising every new code path | `pytest -q` |
 
-The DynamicRouter consistently picked `jsonplaceholder_posts`
-under the `low_latency` weight profile — confirming the routing
-algorithm's behaviour on **real**, not simulated, latency
-distributions.
+## Roadmap
 
-## 2. Internal pilot deployments (anonymised)
-
-Two enterprise pilots ran AgentFlow in production-like environments
-between Q1 2026 and Q2 2026. Numbers are reported with the customer's
-permission.
-
-### 2.1 Mid-market FinTech (loan-origination workflow)
-
-* **Scale.** ~12k orchestrations / day across 38 internal MuleSoft
-  flows and 4 external credit-bureau APIs.
-* **Result.** End-to-end loan-application latency improved from
-  3.4 s → 1.8 s (P95). Bureau-API outages no longer cascaded
-  thanks to AgentFlow's adaptive circuit breaker.
-* **Operational.** 0 unplanned reverts during the 90-day pilot.
-
-### 2.2 HealthTech imaging platform (FHIR + DICOM relay)
-
-* **Scale.** ~3.5k orchestrations / day.
-* **Result.** A custom HIPAA-compliant `IntentParser` ran in
-  `deterministic=True` mode (rule parser only, no LLM) for audit
-  reasons; the LLM-backed parser was used only on a per-request,
-  consent-flagged code path. Reviewer 2's concern about
-  "domain-specific language handling" was directly stress-tested
-  here — the hybrid parser correctly disambiguated `"order a
-  contrast CT for member 991 if eGFR > 30"` 47/50 times in a
-  blinded evaluation by two clinical informaticists.
-
-## 3. Threats to validity
-
-* The public-API benchmark is rate-limited by the upstream services
-  (httpbin, jsonplaceholder, publicapis) and is not a substitute for
-  high-throughput load testing — see `benchmarks/baseline_comparison.py`
-  for that.
-* The pilot numbers are anonymised and not independently audited.
-  We will release sanitised traces with the camera-ready submission
-  if accepted.
+* Capture median throughput / latency / error-rate from a 1k-workflow
+  run against the public APIs above and embed the result here.
+* Recruit one production design partner per vertical and report
+  *measured* numbers in the camera-ready revision.
