@@ -4,7 +4,7 @@ message: "If you use this software, please cite it as below."
 authors:
   - family-names: Gummadi
     given-names: Venkata Pavan Kumar
-version: 1.1.2
+version: 1.2.1
 date-released: 2026-05-01
 repository-code: "https://github.com/venkatapgummadi/agentflow"
 license: MIT
