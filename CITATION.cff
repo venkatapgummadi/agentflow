@@ -5,7 +5,7 @@ authors:
   - family-names: Gummadi
     given-names: Venkata Pavan Kumar
     orcid: "https://orcid.org/XXXX-XXXX-XXXX-XXXX"
-version: 0.1.0
+version: 1.1.2
 date-released: 2026-05-01
 repository-code: "https://github.com/venkatapgummadi/agentflow"
 license: MIT
