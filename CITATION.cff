@@ -4,7 +4,6 @@ message: "If you use this software, please cite it as below."
 authors:
   - family-names: Gummadi
     given-names: Venkata Pavan Kumar
-    orcid: "https://orcid.org/XXXX-XXXX-XXXX-XXXX"
 version: 1.1.2
 date-released: 2026-05-01
 repository-code: "https://github.com/venkatapgummadi/agentflow"
