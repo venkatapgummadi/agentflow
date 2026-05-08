@@ -38,7 +38,7 @@ dev = [
     "pytest>=7.4",
     "pytest-asyncio>=0.23",
     "pytest-cov>=4.1",
-    "ruff>=0.1.0",
+    "ruff>=0.15.12",
     "mypy>=1.5",
 ]
 all = [
