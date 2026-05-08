@@ -5,14 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Known TODO (carried forward)
+## [1.1.3] - 2026-05 (test-coverage close-out)
 
-- Unit tests for ``RetryPolicy`` (covering exponential, linear,
-  fibonacci, adaptive backoff, error classification, retry decisions,
-  jitter bounds, and backoff cap) are still missing. The previous
-  ``[Unreleased]`` entry claiming this work was inaccurate and was
-  removed in 1.1.1; the actual work has not been done yet. Tracked
-  for v1.1.3.
+### Added
+- **Unit tests for ``RetryPolicy``.** ``tests/unit/test_retry_policy.py``
+  adds 39 tests covering: exponential / linear / fibonacci / adaptive
+  backoff strategies, error classification (TRANSIENT, RATE_LIMITED,
+  SERVER_ERROR, CLIENT_ERROR, UNKNOWN), retry decisions per error
+  class, jitter bound invariants (deterministic via fixed-seed RNG,
+  non-negative under any jitter range), the ``backoff_max`` cap, and
+  default-config fallthrough. Closes the carried-forward TODO from
+  v1.1.1 / v1.1.2; total suite is now 285 tests, all green.
 
 ## [1.1.2] - 2026-04 (deep-review fixes)
 
@@ -207,6 +210,13 @@ enterprise API orchestration.
 - CI pipeline (GitHub Actions) with ruff lint and pytest.
 - `pyproject.toml` with `dev`, `all`, and `mulesoft` extras; mypy strict
   configuration; ruff rules `E, F, I, N, W, UP` at 100-column width.
+
+[Unreleased]: https://github.com/venkatapgummadi/agentflow/compare/v1.1.3...HEAD
+[1.1.3]: https://github.com/venkatapgummadi/agentflow/releases/tag/v1.1.3
+[1.1.2]: https://github.com/venkatapgummadi/agentflow/releases/tag/v1.1.2
+[1.1.1]: https://github.com/venkatapgummadi/agentflow/releases/tag/v1.1.1
+[1.1.0]: https://github.com/venkatapgummadi/agentflow/releases/tag/v1.1.0
+[1.0.0]: https://github.com/venkatapgummadi/agentflow/releases/tag/v1.0.0figuration; ruff rules `E, F, I, N, W, UP` at 100-column width.
 
 [Unreleased]: https://github.com/venkatapgummadi/agentflow/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/venkatapgummadi/agentflow/releases/tag/v1.0.0
