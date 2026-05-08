@@ -5,7 +5,7 @@
 [![CI](https://github.com/venkatapgummadi/agentflow/actions/workflows/ci.yml/badge.svg)](https://github.com/venkatapgummadi/agentflow/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
-[![PyPI version](https://img.shields.io/pypi/v/agentflow.svg)](https://pypi.org/project/agentflow/)
+[![PyPI version](https://img.shields.io/pypi/v/agentflow-orchestrator.svg)](https://pypi.org/project/agentflow/)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230.svg)](https://github.com/astral-sh/ruff)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -135,7 +135,7 @@ Adaptive circuit breakers learn from failure patterns. Retry policies adjust bac
 ## Installation
 
 ```bash
-pip install agentflow
+pip install agentflow-orchestrator-orchestrator
 ```
 
 ## Documentation
