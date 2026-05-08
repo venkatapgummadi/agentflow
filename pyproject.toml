@@ -37,7 +37,7 @@ dependencies = ["aiohttp>=3.9.0"]
 dev = [
     "pytest>=7.4",
     "pytest-asyncio>=0.23",
-    "pytest-cov>=4.1",
+    "pytest-cov>=7.1.0",
     "ruff>=0.1.0",
     "mypy>=1.5",
 ]
