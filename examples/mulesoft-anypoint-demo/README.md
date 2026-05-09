@@ -4,7 +4,7 @@
 [![AgentFlow](https://img.shields.io/badge/AgentFlow-1.0.0-teal)](https://github.com/venkatapgummadi/agentflow)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green)](../../LICENSE)
 
-A production-ready **MuleSoft Anypoint Studio** integration that bridges the Anypoint Platform with [AgentFlow](https://github.com/venkatapgummadi/agentflow) — the open-source AI-powered multi-agent API orchestration framework.
+A reference **MuleSoft Anypoint Studio** integration that bridges the Anypoint Platform with [AgentFlow](https://github.com/venkatapgummadi/agentflow) — the open-source AI-powered multi-agent API orchestration framework.
 
 ## What This Does
 

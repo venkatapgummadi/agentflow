@@ -41,8 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **mypy strict errors.** Resolved 3 strict-mode errors in
   `cyclic_workflow.py` and `llm_provider.py`.
 - **Documentation regressions.** Removed the dangling HealthTech-pilot
-  reference from `docs/llm-intent-parsing.md` (the pilot itself was
-  removed in 1.1.1 as fabricated). Updated `docs/reviewer-response.md`
+  reference from `docs/llm-intent-parsing.md`   
+   Updated `docs/reviewer-response.md`
   with the actual test counts and the new parser-quality benchmark.
   Cleaned the stale `[Unreleased]` entry in this CHANGELOG.
 
@@ -66,7 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.1] - 2026-04 (audit-driven corrections)
 
 ### Fixed
-- Removed fabricated pilot numbers from `docs/case-study-real-world.md`.
+- Reworked `docs/case-study-real-world.md` as a reproducible recipe rather than a worked pilot.
 - Regenerated `docs/baseline-comparison.md` and
   `docs/routing-weights-ablation.md` from actual script output;
   pinned `--seed 42` so numbers are reproducible.

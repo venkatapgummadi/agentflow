@@ -1,7 +1,7 @@
 """
 A small hand-labelled intent corpus for parser-quality benchmarking.
 
-40 intents across four enterprise verticals (FinTech, HealthTech,
+40 intents across four domain categories (FinTech, HealthTech,
 E-Commerce, Insurance), each with a "gold" expected parse:
 
 * ``ops``        -- expected canonical verbs in order (multiset)
