@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `cyclic_workflow.py` and `llm_provider.py`.
 - **Documentation regressions.** Removed the dangling HealthTech-pilot
   reference from `docs/llm-intent-parsing.md`   
-   Updated `docs/reviewer-response.md`
+  Updated `docs/reviewer-response.md`
   with the actual test counts and the new parser-quality benchmark.
   Cleaned the stale `[Unreleased]` entry in this CHANGELOG.
 
