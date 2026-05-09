@@ -1,10 +1,50 @@
 cff-version: 1.2.0
 title: AgentFlow
-message: "If you use this software, please cite it as below."
+message: "If you use this software, please cite the accompanying paper (preferred-citation block below)."
+abstract: >-
+  AgentFlow is a multi-agent framework for enterprise API orchestration that
+  learns three runtime parameters online: routing weights via a gradient-free
+  optimizer, circuit-breaker cooldown via an MDP-formalized multiplicative-weight
+  policy, and intent-parser selection via a confidence-thresholded hybrid parser.
+  The framework is released open source under the Apache 2.0 license.
+type: software
 authors:
   - family-names: Gummadi
     given-names: Venkata Pavan Kumar
+    email: venkata.p.gummadi@ieee.org
+    affiliation: "Independent Industry Researcher, Connecticut, USA"
 version: 1.3.0
-date-released: 2026-05-01
+date-released: 2026-05-08
 repository-code: "https://github.com/venkatapgummadi/agentflow"
+url: "https://github.com/venkatapgummadi/agentflow"
 license: Apache-2.0
+keywords:
+  - adaptive systems
+  - application programming interfaces
+  - circuit breakers
+  - distributed computing
+  - enterprise integration
+  - fault tolerance
+  - Markov decision processes
+  - multi-agent systems
+  - online learning
+  - services computing
+  - software architecture
+
+preferred-citation:
+  type: article
+  title: "AgentFlow: Online Adaptive Optimization for Multi-Agent Enterprise API Orchestration"
+  authors:
+    - family-names: Gummadi
+      given-names: Venkata Pavan Kumar
+      email: venkata.p.gummadi@ieee.org
+  year: 2026
+  month: 5
+  journal: "IEEE Access"
+  notes: >-
+    Manuscript submitted to IEEE Access on 8 May 2026; revision pending.
+    The DOI will be added upon acceptance. The repository at
+    https://github.com/venkatapgummadi/agentflow contains the open-source
+    framework, the labelled intent corpus, the routing-weight ablation
+    harness, and the calibrated baseline-comparison harness referenced
+    in the manuscript.
