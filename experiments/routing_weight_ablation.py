@@ -14,7 +14,7 @@ population and reports decision quality across multiple metrics:
 * **diversity** — fraction of unique endpoints chosen across requests
   (a sanity check that the router is not collapsing to a single pick).
 
-The candidate population mirrors the four enterprise verticals used
+The candidate population mirrors the four domain categories used
 in the paper (FinTech, HealthTech, E-Commerce, Insurance) so the
 sensitivity surface aligns with the rest of the evaluation.
 
