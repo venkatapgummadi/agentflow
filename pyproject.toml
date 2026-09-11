@@ -49,7 +49,7 @@ all = [
 mulesoft = [
     # aiohttp is now in base dependencies; this extra only adds the
     # YAML parser used by Anypoint config files.
-    "pyyaml>=6.0",
+    "pyyaml>=6.0.3",
 ]
 
 [project.urls]
