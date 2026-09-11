@@ -725,7 +725,7 @@ class MuleSoftConnector(BaseConnector):
 
 ### OrchestrationContext Event System
 
-Every action in AgentFlow creates an immutable audit event in the event journal for complete traceability.
+Every action in AgentFlow creates an immutable audit event in the event journal for complete traceability. The journal is the in-repo implementation of the provenance trail described in [Indian Patent Application No. 202641090631](patent.md).
 
 #### EventType Enumeration
 

@@ -56,6 +56,7 @@ mulesoft = [
 Homepage = "https://github.com/venkatapgummadi/agentflow"
 Repository = "https://github.com/venkatapgummadi/agentflow"
 Issues = "https://github.com/venkatapgummadi/agentflow/issues"
+Patent = "https://github.com/venkatapgummadi/agentflow/blob/main/docs/patent.md"
 
 [tool.setuptools.packages.find]
 # Ship the framework plus the reproducible-experiment scripts and the

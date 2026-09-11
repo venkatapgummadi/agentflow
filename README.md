@@ -8,6 +8,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/agentflow-orchestrator.svg)](https://pypi.org/project/agentflow/)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230.svg)](https://github.com/astral-sh/ruff)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![IN 202641090631](https://img.shields.io/badge/IN-202641090631-blue.svg)](docs/patent.md)
 
 
 **AgentFlow** is a Python framework where autonomous AI agents dynamically orchestrate, compose, and self-heal API workflows across enterprise integration platforms — with first-class MuleSoft Anypoint support.
@@ -146,6 +147,7 @@ See the [docs/](docs/) directory for detailed guides:
 - [MuleSoft Integration Guide](docs/mulesoft_guide.md)
 - [Writing Custom Agents](docs/custom_agents.md)
 - [Routing Strategies](docs/routing.md)
+- [Patent](docs/patent.md) — Indian Patent Application No. 202641090631
 
 ## Who's Using AgentFlow?
 
@@ -180,6 +182,19 @@ Pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the dev
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE) for details.
+
+## Patent
+
+AgentFlow implements the provenance-aware integration-workflow architecture
+described in:
+
+> **Indian Patent Application No. 202641090631**
+> *A Computer Implemented Provenance Aware Integration Workflow Management System*
+> Applicant: Venkata Pavan Kumar Gummadi
+> Filed 24 July 2026 · Published 31 July 2026 (Section 11A)
+
+Bibliographic details, the public-search link, and how the specification maps
+onto this codebase are in [`docs/patent.md`](docs/patent.md).
 
 ## Author
 
