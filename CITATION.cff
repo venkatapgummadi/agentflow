@@ -48,3 +48,23 @@ preferred-citation:
     framework, the labelled intent corpus, the routing-weight ablation
     harness, and the calibrated baseline-comparison harness referenced
     in the manuscript.
+
+references:
+  - type: patent
+    title: "A Computer Implemented Provenance Aware Integration Workflow Management System"
+    authors:
+      - family-names: Gummadi
+        given-names: Venkata Pavan Kumar
+        email: venkata.p.gummadi@ieee.org
+    year: 2026
+    month: 7
+    date-published: "2026-07-31"
+    patent-countries:
+      - IN
+    number: "202641090631"
+    url: "https://iprsearch.ipindia.gov.in/PublicSearch/"
+    notes: >-
+      Indian Patent Application No. 202641090631, filed 24 July 2026 and
+      published 31 July 2026 under Section 11A of the Patents Act, 1970.
+      AgentFlow is the public open-source implementation of the integration
+      workflow architecture described in the application.
